@@ -1,0 +1,166 @@
+.tableWrapper {
+    width: 100%;
+    margin-top: 8px;
+}
+
+.rooms {
+    border-collapse: separate;
+    border-spacing: 0 8px;
+    width: 100%;
+    color: white;
+}
+
+.rooms thead th {
+    padding: 12px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.4);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: center;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+}
+
+.rooms thead th:nth-child(2) {
+    text-align: left;
+}
+
+.roomRow {
+    background: rgba(255, 255, 255, 0.03);
+    transition: all 0.3s ease;
+}
+
+.roomRow:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: scale(1.01);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.roomRow td {
+    padding: 12px 16px;
+    text-align: center;
+    font-size: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.roomRow td:first-child {
+    border-left: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 12px 0 0 12px;
+}
+
+.roomRow td:last-child {
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 0 12px 12px 0;
+}
+
+.roomName {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left !important;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.lockIcon {
+    width: 16px;
+    height: 16px;
+    opacity: 0.6;
+}
+
+.playerCount {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.countText {
+    font-size: 12px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.miniBar {
+    width: 40px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.miniBarFill {
+    height: 100%;
+    background: #4a90e2;
+    border-radius: 2px;
+}
+
+.statusBadge {
+    display: inline-block;
+    padding: 4px 10px;
+    font-size: 10px;
+    font-weight: 800;
+    border-radius: 6px;
+    background: rgba(74, 144, 226, 0.15);
+    color: #4a90e2;
+    letter-spacing: 0.5px;
+}
+
+.joinBtn {
+    padding: 8px 16px !important;
+    font-size: 13px !important;
+    font-weight: 700;
+    border-radius: 8px;
+    border: none;
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.joinBtn:hover {
+    background: #4a90e2 !important;
+    box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
+}
+
+.emptyState {
+    padding: 40px !important;
+    color: rgba(255, 255, 255, 0.4);
+    font-style: italic;
+    border: none !important;
+}
+
+.firstColumn {
+    width: 40px;
+}
+
+.lastColumn {
+    width: 90px;
+}
+
+@media (max-width: 500px) {
+    .rooms thead th {
+        padding: 8px 6px;
+        font-size: 10px;
+    }
+
+    .roomRow td {
+        padding: 8px 6px;
+        font-size: 12px;
+    }
+
+    .roomName {
+        max-width: 100px;
+    }
+
+    .joinBtn {
+        padding: 6px 10px !important;
+        font-size: 11px !important;
+    }
+
+    .lastColumn {
+        width: 60px;
+    }
+}

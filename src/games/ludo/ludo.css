@@ -1,0 +1,343 @@
+/* Font loaded via BattleX global styles */
+
+.ludo-root * {
+    /* margin: 0; */
+    /* padding: 0; */
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+.ludo-root *::-webkit-scrollbar {
+    background: transparent;
+    width: 8px;
+}
+
+.ludo-root *::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.ludo-root *::-webkit-scrollbar-thumb {
+    background-color: rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+}
+
+.ludo-root {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(135deg, #0a1628 0%, #0d2137 30%, #0f2d4a 60%, #0a1628 100%);
+    position: relative;
+    width: 100%;
+    flex: 1;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    -webkit-font-smoothing: antialiased;
+}
+
+.ludo-root-container {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100%;
+    width: 100%;
+    padding: 20px 10px;
+}
+
+.ludo-root canvas {
+    border-radius: 12px;
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    width: 100%;
+    height: auto;
+    max-width: 460px;
+}
+
+.ludo-root .container {
+    display: grid;
+    align-items: center;
+    justify-items: center;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: auto auto auto auto;
+    gap: 8px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    animation: boardEnter 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    margin-top: 50px;
+    width: 100%;
+    max-width: 500px;
+}
+
+@keyframes boardEnter {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.ludo-root .canvas-container {
+    place-self: center;
+    grid-column: 1 / span 2;
+    grid-row: 2 / span 2;
+    z-index: 10;
+}
+
+/* Back Button - Lettrix style */
+.ludo-root .back-button {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    padding: 10px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    z-index: 10000;
+}
+
+.ludo-root .back-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+    transform: translateX(-4px);
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.ludo-root .back-button svg {
+    transition: transform 0.3s ease;
+}
+
+.ludo-root .back-button:hover svg {
+    transform: translateX(-2px);
+}
+
+/* Timer */
+.ludo-root .timer {
+    background: linear-gradient(135deg, #1a237e, #0d47a1);
+    color: white;
+    position: relative;
+    bottom: 60px;
+    left: 82px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 2px 4px;
+    width: 32px;
+    height: 22px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+/* Overlay */
+.ludo-root .overlay {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+    opacity: 0.9;
+    animation: timerAnimation 15s linear infinite;
+    transition-duration: 15s;
+}
+
+/* Inputs */
+.ludo-root input,
+.ludo-root button {
+    padding: 0;
+    border: none;
+    outline: none;
+    box-sizing: border-box;
+    font-family: 'Inter', sans-serif;
+}
+
+.ludo-root input {
+    width: 100%;
+    padding: 12px 16px;
+    font-size: 15px;
+    border-radius: 10px;
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    background-color: rgba(255, 255, 255, 0.08);
+    transition: all 0.3s ease;
+    backdrop-filter: blur(5px);
+}
+
+.ludo-root input:disabled {
+    background-color: rgba(0, 0, 0, 0.3);
+    color: #666;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ludo-root input:focus {
+    color: white;
+    border-color: #4a90e2;
+    background-color: rgba(74, 144, 226, 0.1);
+    box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.15);
+}
+
+.ludo-root button {
+    padding: 12px 20px;
+    font-size: 15px;
+    border-radius: 10px;
+    border: none;
+    color: #fff;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.06));
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ludo-root button:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.ludo-root button:active {
+    transform: translateY(0);
+}
+
+/* Dice roll animation */
+@keyframes diceRoll {
+    0% {
+        transform: rotate(0deg) scale(1);
+    }
+
+    25% {
+        transform: rotate(90deg) scale(1.1);
+    }
+
+    50% {
+        transform: rotate(180deg) scale(1);
+    }
+
+    75% {
+        transform: rotate(270deg) scale(1.1);
+    }
+
+    100% {
+        transform: rotate(360deg) scale(1);
+    }
+}
+
+@keyframes turnPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+        transform: scale(1);
+    }
+
+    50% {
+        box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+        transform: scale(1.02);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+        transform: scale(1);
+    }
+}
+
+.ludo-root .roll {
+    animation: diceRoll 0.6s ease-in-out;
+}
+
+.ludo-root .movingPulse {
+    animation: turnPulse 2s infinite ease-in-out;
+    border-color: rgba(255, 255, 255, 0.8) !important;
+}
+
+@media (max-width: 500px) {
+    .ludo-root-container {
+        padding: 80px 5px 20px;
+    }
+
+    .ludo-root .container {
+        padding: 8px 5px;
+        gap: 4px;
+        margin-top: 20px;
+    }
+
+    .ludo-root canvas {
+        max-width: 100%;
+    }
+
+    .ludo-root .timer {
+        left: 60px;
+        bottom: 50px;
+    }
+}
+
+.ludo-spinner-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    min-height: 200px;
+}
+
+.ludo-spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255, 255, 255, 0.1);
+    border-top: 5px solid #ff4d94;
+    border-radius: 50%;
+    animation: ludo-spin 1s linear infinite;
+}
+
+@keyframes ludo-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* MUI Switch Overrides for Ludo */
+.ludo-root .MuiSwitch-root {
+    padding: 8px;
+}
+
+.ludo-root .MuiSwitch-switchBase {
+    padding: 9px;
+    color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.ludo-root .MuiSwitch-switchBase.Mui-checked {
+    color: #ff4d94 !important;
+}
+
+.ludo-root .MuiSwitch-switchBase.Mui-checked+.MuiSwitch-track {
+    background-color: #ff4d94 !important;
+    opacity: 0.5 !important;
+}
+
+.ludo-root .MuiSwitch-track {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    border-radius: 12px !important;
+}
+
+.ludo-root .MuiTouchRipple-root {
+    display: none;
+}

@@ -1,0 +1,79 @@
+<svg width="600" height="380" viewBox="0 0 600 380" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#000d2e"/>
+    <stop offset="50%" stop-color="#001a4d"/>
+    <stop offset="100%" stop-color="#000a1a"/>
+  </linearGradient>
+  <linearGradient id="paddle-face" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#f87171"/>
+    <stop offset="100%" stop-color="#b91c1c"/>
+  </linearGradient>
+  <linearGradient id="paddle-rim" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="#fca5a5"/>
+    <stop offset="100%" stop-color="#ef4444"/>
+  </linearGradient>
+  <linearGradient id="handle" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#92400e"/>
+    <stop offset="50%" stop-color="#c2842a"/>
+    <stop offset="100%" stop-color="#92400e"/>
+  </linearGradient>
+  <linearGradient id="ball-g" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#fef9c3"/>
+    <stop offset="100%" stop-color="#fde047"/>
+  </linearGradient>
+  <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.25"/>
+    <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+
+<rect width="600" height="380" fill="url(#bg)"/>
+<circle cx="300" cy="185" r="180" fill="url(#glow)"/>
+
+<!-- Paddle — rotated 30deg, centered -->
+<g transform="translate(300,195) rotate(-30)">
+
+  <!-- Paddle rim/border -->
+  <ellipse cx="0" cy="-55" rx="88" ry="95" fill="url(#paddle-rim)"/>
+
+  <!-- Paddle main face -->
+  <ellipse cx="0" cy="-55" rx="80" ry="87" fill="url(#paddle-face)"/>
+
+  <!-- Paddle rubber texture lines -->
+  <line x1="-60" y1="-55" x2="60" y2="-55" stroke="rgba(0,0,0,0.12)" stroke-width="3"/>
+  <line x1="-70" y1="-35" x2="70" y2="-35" stroke="rgba(0,0,0,0.12)" stroke-width="3"/>
+  <line x1="-75" y1="-15" x2="75" y2="-15" stroke="rgba(0,0,0,0.12)" stroke-width="3"/>
+  <line x1="-75" y1="5"   x2="75" y2="5"   stroke="rgba(0,0,0,0.12)" stroke-width="3"/>
+  <line x1="-70" y1="25"  x2="70" y2="25"  stroke="rgba(0,0,0,0.12)" stroke-width="3"/>
+  <line x1="-60" y1="40"  x2="60" y2="40"  stroke="rgba(0,0,0,0.12)" stroke-width="3"/>
+  <line x1="-45" y1="55"  x2="45" y2="55"  stroke="rgba(0,0,0,0.12)" stroke-width="3"/>
+  <!-- highlight -->
+  <ellipse cx="-22" cy="-82" rx="28" ry="18" fill="rgba(255,255,255,0.18)"/>
+
+  <!-- Handle -->
+  <rect x="-18" y="32" width="36" height="88" rx="12" fill="url(#handle)"/>
+  <rect x="-10" y="36" width="8" height="76" rx="4" fill="rgba(255,255,255,0.18)"/>
+  <!-- Handle grip lines -->
+  <line x1="-14" y1="60"  x2="14" y2="60"  stroke="rgba(0,0,0,0.25)" stroke-width="3" stroke-linecap="round"/>
+  <line x1="-14" y1="74"  x2="14" y2="74"  stroke="rgba(0,0,0,0.25)" stroke-width="3" stroke-linecap="round"/>
+  <line x1="-14" y1="88"  x2="14" y2="88"  stroke="rgba(0,0,0,0.25)" stroke-width="3" stroke-linecap="round"/>
+  <line x1="-14" y1="102" x2="14" y2="102" stroke="rgba(0,0,0,0.25)" stroke-width="3" stroke-linecap="round"/>
+
+</g>
+
+<!-- Ball -->
+<circle cx="420" cy="108" r="34" fill="url(#ball-g)"/>
+<circle cx="420" cy="108" r="34" fill="none" stroke="rgba(255,220,0,0.3)" stroke-width="2"/>
+<!-- Ball seam curve -->
+<path d="M 390 98 Q 420 118 450 98" fill="none" stroke="rgba(180,140,0,0.5)" stroke-width="2.5" stroke-linecap="round"/>
+<path d="M 390 118 Q 420 98 450 118" fill="none" stroke="rgba(180,140,0,0.5)" stroke-width="2.5" stroke-linecap="round"/>
+<!-- Ball shine -->
+<ellipse cx="408" cy="96" rx="10" ry="7" fill="rgba(255,255,255,0.55)"/>
+
+<!-- Motion dots trailing the ball -->
+<circle cx="375" cy="130" r="7" fill="#fde047" opacity="0.5"/>
+<circle cx="348" cy="148" r="5" fill="#fde047" opacity="0.3"/>
+<circle cx="326" cy="162" r="3.5" fill="#fde047" opacity="0.15"/>
+
+</svg>

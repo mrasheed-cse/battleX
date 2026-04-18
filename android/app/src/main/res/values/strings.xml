@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">BattleX</string>
+    <string name="title_activity_main">BattleX</string>
+    <string name="package_name">com.battlex.games</string>
+    <string name="custom_url_scheme">com.battlex.games</string>
+</resources>

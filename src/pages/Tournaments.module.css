@@ -1,0 +1,189 @@
+.page { padding-bottom: 96px; }
+
+.header {
+  background: linear-gradient(180deg, #150005 0%, var(--bg-primary) 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 56px 0 40px;
+  margin-bottom: 40px;
+}
+
+.headerStats {
+  display: flex;
+  gap: 40px;
+  margin-top: 32px;
+  flex-wrap: wrap;
+}
+.hStat { display: flex; flex-direction: column; gap: 4px; }
+.hStatVal   { font-family: var(--font-display); font-size: 32px; font-weight: 900; color: var(--accent-red); }
+.hStatLabel { font-family: var(--font-ui); font-size: 12px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; }
+
+/* Filter tabs */
+.filterTabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 36px;
+  flex-wrap: wrap;
+}
+.filterTab {
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  padding: 8px 18px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: var(--transition);
+}
+.filterTab:hover { color: var(--text-primary); border-color: var(--border-light); }
+.filterTabActive {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.filterCount {
+  background: var(--bg-elevated);
+  padding: 1px 7px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.liveDotTab {
+  width: 7px; height: 7px;
+  background: var(--accent-red);
+  border-radius: 50%;
+  animation: pulse-dot 1s infinite;
+}
+
+/* Grid */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 24px;
+}
+
+/* Card */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  transition: var(--transition);
+}
+.card:hover {
+  border-color: var(--border-light);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-card);
+}
+
+.cardHeader {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--t-accent) 10%, #0a0a14), #0d0d18);
+  border-bottom: 1px solid var(--border);
+  padding: 20px 24px;
+}
+.cardHeaderInner {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+.cardGame {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--t-accent, var(--accent));
+  margin-bottom: 4px;
+}
+.cardName {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-ui);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  white-space: nowrap;
+}
+.liveDot {
+  width: 6px; height: 6px;
+  background: var(--accent-red);
+  border-radius: 50%;
+  animation: pulse-dot 1s infinite;
+}
+.tierBadge {
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+
+.cardBody { padding: 20px 24px; }
+.cardDesc {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.cardMeta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--bg-primary);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+}
+.metaItem { display: flex; flex-direction: column; gap: 3px; }
+.metaLabel {
+  font-family: var(--font-ui);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.prize {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 900;
+  color: var(--accent-gold);
+}
+.metaVal {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.slotsRow {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.slotsLabel {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+@media (max-width: 600px) {
+  .grid { grid-template-columns: 1fr; }
+}

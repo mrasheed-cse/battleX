@@ -1,0 +1,100 @@
+.footer {
+  background: #050508;
+  border-top: 1px solid var(--border);
+  padding: 64px 0 32px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 48px;
+}
+
+.brand {}
+.logo {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: var(--text-primary);
+  text-decoration: none;
+  display: inline-block;
+  margin-bottom: 16px;
+}
+.logoAccent { color: var(--accent); }
+.tagline {
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.8;
+  max-width: 280px;
+  margin-bottom: 20px;
+}
+
+.socials { display: flex; gap: 10px; }
+.socialBtn {
+  width: 36px;
+  height: 36px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  transition: var(--transition);
+}
+.socialBtn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.col {}
+.colTitle {
+  font-family: var(--font-ui);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+.colLink {
+  display: block;
+  font-family: var(--font-ui);
+  font-size: 14px;
+  color: var(--text-muted);
+  text-decoration: none;
+  margin-bottom: 10px;
+  transition: color 0.2s;
+}
+.colLink:hover { color: var(--accent); }
+
+.bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 1024px) {
+  .grid { grid-template-columns: 1fr 1fr; }
+  .brand { grid-column: 1 / -1; }
+}
+@media (max-width: 600px) {
+  .grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+}
+
+.bottomLinks { display: flex; gap: 16px; }
+.bottomLink  {
+  font-family: var(--font-ui); font-size: 13px; color: var(--text-muted);
+  text-decoration: none; transition: color 0.2s;
+}
+.bottomLink:hover { color: var(--accent); }
