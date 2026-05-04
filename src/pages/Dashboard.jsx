@@ -1,0 +1,456 @@
+import { useState, useEffect, useCallback } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import { players, wallet, auth as authApi } from '../services/api'
+import styles from './Dashboard.module.css'
+
+const fmtMoney    = n   => `৳${(n || 0).toFixed(2)}`
+const fmtDate     = iso => iso ? new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' }) : '—'
+const fmtDateTime = iso => iso ? new Date(iso).toLocaleString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'2-digit', minute:'2-digit' }) : '—'
+const outcomeColor = o  => ({ Win:'#4caf50', Loss:'#f44336', Draw:'#ff9800' })[o] || '#90caf9'
+const outcomeIcon  = o  => ({ Win:'🏆', Loss:'💔', Draw:'🤝' })[o] || '🎮'
+
+function StatCard({ icon, label, value, color }) {
+  return (
+    <div className={styles.statCard}>
+      <div className={styles.statIcon} style={{ color }}>{icon}</div>
+      <div>
+        <div className={styles.statValue}>{value}</div>
+        <div className={styles.statLabel}>{label}</div>
+      </div>
+    </div>
+  )
+}
+
+// ── Profile Editor ────────────────────────────────────────────────────────────
+function ProfileEdit({ user, dashboard, onSave }) {
+  const [form,     setForm]     = useState({
+    displayName: dashboard?.displayName || '',
+    bio:         dashboard?.bio         || '',
+    country:     dashboard?.country     || '',
+    avatarUrl:   dashboard?.avatarUrl   || '',
+  })
+  const [saving,   setSaving]   = useState(false)
+  const [msg,      setMsg]      = useState(null)
+  const [pwForm,   setPwForm]   = useState({ currentPassword:'', newPassword:'', confirmNew:'' })
+  const [pwSaving, setPwSaving] = useState(false)
+  const [pwMsg,    setPwMsg]    = useState(null)
+
+  const handleSave = async e => {
+    e.preventDefault(); setSaving(true); setMsg(null)
+    try {
+      await players.updateMe({ userId: user?.userId, ...form })
+      setMsg({ ok: true, text: 'Profile updated successfully!' })
+      onSave()
+    } catch (err) {
+      setMsg({ ok: false, text: err.message || 'Update failed' })
+    } finally { setSaving(false) }
+  }
+
+  const handlePwChange = async e => {
+    e.preventDefault()
+    if (pwForm.newPassword !== pwForm.confirmNew) {
+      setPwMsg({ ok: false, text: 'Passwords do not match' }); return
+    }
+    setPwSaving(true); setPwMsg(null)
+    try {
+      await authApi.changePassword({
+        userId:          user?.userId,
+        currentPassword: pwForm.currentPassword,
+        newPassword:     pwForm.newPassword,
+      })
+      setPwMsg({ ok: true, text: 'Password changed!' })
+      setPwForm({ currentPassword:'', newPassword:'', confirmNew:'' })
+    } catch (err) {
+      setPwMsg({ ok: false, text: err.message || 'Failed to change password' })
+    } finally { setPwSaving(false) }
+  }
+
+  return (
+    <div className={styles.profileGrid}>
+      <div className={styles.card}>
+        <h3 className={styles.cardTitle}>👤 Edit Profile</h3>
+        {msg && <div className={`${styles.msg} ${msg.ok ? styles.msgOk : styles.msgErr}`}>{msg.text}</div>}
+        <form onSubmit={handleSave} className={styles.form}>
+          {[
+            { key:'displayName', label:'Display Name', placeholder:'Your display name' },
+            { key:'bio',         label:'Bio',          placeholder:'Tell us about yourself' },
+            { key:'country',     label:'Country',      placeholder:'e.g. Bangladesh' },
+            { key:'avatarUrl',   label:'Avatar URL',   placeholder:'https://...' },
+          ].map(f => (
+            <div key={f.key} className={styles.formRow}>
+              <label>{f.label}</label>
+              <input type="text" placeholder={f.placeholder}
+                value={form[f.key]}
+                onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}/>
+            </div>
+          ))}
+          <button className="btn btn-primary" type="submit" disabled={saving}>
+            {saving ? 'Saving...' : 'Save Profile'}
+          </button>
+        </form>
+      </div>
+
+      <div className={styles.card}>
+        <h3 className={styles.cardTitle}>🔒 Change Password</h3>
+        {pwMsg && <div className={`${styles.msg} ${pwMsg.ok ? styles.msgOk : styles.msgErr}`}>{pwMsg.text}</div>}
+        <form onSubmit={handlePwChange} className={styles.form}>
+          {[
+            { key:'currentPassword', label:'Current Password', placeholder:'Current password' },
+            { key:'newPassword',     label:'New Password',     placeholder:'Min 6 characters'  },
+            { key:'confirmNew',      label:'Confirm New',      placeholder:'Repeat new password' },
+          ].map(f => (
+            <div key={f.key} className={styles.formRow}>
+              <label>{f.label}</label>
+              <input type="password" placeholder={f.placeholder}
+                value={pwForm[f.key]}
+                onChange={e => setPwForm(p => ({ ...p, [f.key]: e.target.value }))}/>
+            </div>
+          ))}
+          <button className="btn btn-primary" type="submit" disabled={pwSaving}>
+            {pwSaving ? 'Changing...' : 'Change Password'}
+          </button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+// ── Main Dashboard ────────────────────────────────────────────────────────────
+export default function Dashboard() {
+  const { user, logout } = useAuth()
+  const navigate = useNavigate()
+
+  const [dashboard,  setDashboard]  = useState(null)
+  const [walletData, setWalletData] = useState(null)
+  const [stats,      setStats]      = useState(null)
+  const [history,    setHistory]    = useState([])
+  const [txns,       setTxns]       = useState([])
+  const [tab,        setTab]        = useState('overview')
+  const [loading,    setLoading]    = useState(true)
+  const [txnLoading, setTxnLoading] = useState(false)
+  const [error,      setError]      = useState(null)
+  const [histPage,   setHistPage]   = useState(1)
+  const [histTotal,  setHistTotal]  = useState(0)
+  const [gameFilter, setGameFilter] = useState('')
+  const [withdrawForm, setWithdrawForm] = useState({ amount:'', method:'bkash', accountInfo:'' })
+  const [withdrawing,  setWithdrawing]  = useState(false)
+  const [withdrawMsg,  setWithdrawMsg]  = useState(null)
+
+  const loadCore = useCallback(async () => {
+    setLoading(true); setError(null)
+    try {
+      const [d, w, s] = await Promise.allSettled([
+        players.dashboard(),
+        wallet.me(),
+        players.stats(),
+      ])
+      if (d.status === 'fulfilled') setDashboard(d.value?.data)
+      if (w.status === 'fulfilled') setWalletData(w.value?.data)
+      if (s.status === 'fulfilled') setStats(s.value?.data)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  const loadHistory = useCallback(async (page = 1, gameType = '') => {
+    try {
+      const params = { page, pageSize: 10 }
+      if (gameType) params.gameType = gameType
+      const res = await players.gameHistory(params)
+      setHistory(res?.data?.items || [])
+      setHistTotal(res?.data?.totalCount || 0)
+      setHistPage(page)
+    } catch { /* silent */ }
+  }, [])
+
+  const loadTxns = useCallback(async () => {
+    setTxnLoading(true)
+    try {
+      const res = await wallet.transactions({ page: 1, pageSize: 20 })
+      const items = res?.data?.items || res?.data || []
+      setTxns(Array.isArray(items) ? items : [])
+    } catch { /* silent */ } finally { setTxnLoading(false) }
+  }, [])
+
+  useEffect(() => {
+    if (!user) { navigate('/'); return }
+    loadCore()
+  }, [user, navigate, loadCore])
+
+  useEffect(() => {
+    if (tab === 'history') loadHistory(1, gameFilter)
+    if (tab === 'wallet')  loadTxns()
+  }, [tab, gameFilter, loadHistory, loadTxns])
+
+  const handleWithdraw = async e => {
+    e.preventDefault()
+    setWithdrawing(true); setWithdrawMsg(null)
+    try {
+      await wallet.withdraw({
+        userId:      user?.userId,
+        amount:      parseFloat(withdrawForm.amount),
+        method:      withdrawForm.method,
+        accountInfo: withdrawForm.accountInfo,
+      })
+      setWithdrawMsg({ ok: true, text: 'Withdrawal request submitted!' })
+      setWithdrawForm({ amount:'', method:'bkash', accountInfo:'' })
+      loadCore()
+    } catch (e) {
+      setWithdrawMsg({ ok: false, text: e.message || 'Withdrawal failed' })
+    } finally { setWithdrawing(false) }
+  }
+
+  if (!user) return null
+
+  if (loading) return (
+    <div className={styles.loadWrap}>
+      <div className={styles.spinner}/>
+      <p>Loading your dashboard...</p>
+    </div>
+  )
+
+  if (error) return (
+    <div className={styles.errorWrap}>
+      <p>⚠ {error}</p>
+      <button className="btn btn-primary" onClick={loadCore}>Retry</button>
+    </div>
+  )
+
+  const d = dashboard || {}
+  const w = walletData || {}
+  const s = stats     || {}
+
+  return (
+    <div className={styles.page}>
+      {/* Hero */}
+      <div className={styles.hero}>
+        <div className="container">
+          <div className={styles.heroContent}>
+            <div className={styles.avatar}>
+              {d.avatarUrl
+                ? <img src={d.avatarUrl} alt={d.displayName}/>
+                : <span>{(d.displayName || d.username || user.username || 'U')[0].toUpperCase()}</span>
+              }
+              {d.currentRank && <div className={styles.rankBadge}>#{d.currentRank}</div>}
+            </div>
+            <div className={styles.heroInfo}>
+              <h1 className={styles.heroName}>{d.displayName || d.username || user.username}</h1>
+              <p className={styles.heroMeta}>
+                @{d.username || user.username}
+                {d.country && <span> · 🌍 {d.country}</span>}
+                <span> · Member since {fmtDate(d.memberSince)}</span>
+              </p>
+              {d.lastPlayedAt && <p className={styles.heroSub}>Last played: {fmtDateTime(d.lastPlayedAt)}</p>}
+            </div>
+            <div className={styles.heroWallet}>
+              <div className={styles.balanceLabel}>Wallet Balance</div>
+              <div className={styles.balanceVal}>{fmtMoney(w.balance)}</div>
+              {w.pendingWithdrawals > 0 && (
+                <div className={styles.pendingLabel}>⏳ {fmtMoney(w.pendingWithdrawals)} pending</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container">
+        {/* Stats */}
+        <div className={styles.statsGrid}>
+          <StatCard icon="🎮" label="Games Played" value={d.totalGamesPlayed || 0}                         color="#90caf9"/>
+          <StatCard icon="🏆" label="Wins"          value={d.totalWins || 0}                               color="#ffd700"/>
+          <StatCard icon="📉" label="Losses"        value={d.totalLosses || 0}                             color="#f44336"/>
+          <StatCard icon="📊" label="Win Rate"      value={`${((d.winRate||0)*100).toFixed(1)}%`}          color="#4caf50"/>
+          <StatCard icon="⭐" label="Total Points"  value={(d.totalPointsEarned||0).toLocaleString()}      color="#ff9800"/>
+          <StatCard icon="💰" label="Total Earned"  value={fmtMoney(d.totalMoneyEarned)}                  color="#81c784"/>
+          <StatCard icon="🔥" label="Win Streak"    value={s.streak || 0}                                  color="#ff5722"/>
+          <StatCard icon="🥇" label="Global Rank"   value={d.currentRank ? `#${d.currentRank}` : '—'}     color="#ce93d8"/>
+        </div>
+
+        {/* Tabs */}
+        <div className={styles.tabs}>
+          {[
+            { id:'overview', label:'📊 Overview'     },
+            { id:'history',  label:'🎮 Game History' },
+            { id:'wallet',   label:'💰 Wallet'       },
+            { id:'profile',  label:'👤 Profile'      },
+          ].map(t => (
+            <button key={t.id}
+              className={`${styles.tab} ${tab === t.id ? styles.tabActive : ''}`}
+              onClick={() => setTab(t.id)}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ── Overview ── */}
+        {tab === 'overview' && (
+          <div className={styles.overviewGrid}>
+            {s.gameTypeBreakdown && Object.keys(s.gameTypeBreakdown).length > 0 && (
+              <div className={styles.card}>
+                <h3 className={styles.cardTitle}>🎯 Games by Type</h3>
+                {Object.entries(s.gameTypeBreakdown).map(([type, count]) => (
+                  <div key={type} className={styles.breakdownRow}>
+                    <span className={styles.breakdownType}>{type}</span>
+                    <div className={styles.breakdownBar}>
+                      <div className={styles.breakdownFill}
+                        style={{ width: `${Math.min(100, (count / (d.totalGamesPlayed || 1)) * 100)}%` }}/>
+                    </div>
+                    <span className={styles.breakdownCount}>{count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+            <div className={styles.card}>
+              <h3 className={styles.cardTitle}>🕐 Recent Games</h3>
+              {(d.recentGames || []).length === 0
+                ? <p className={styles.empty}>No recent games. Start playing!</p>
+                : (d.recentGames || []).map((g, i) => (
+                  <div key={i} className={styles.recentRow}>
+                    <span className={styles.recentIcon}>{outcomeIcon(g.outcome)}</span>
+                    <div className={styles.recentInfo}>
+                      <span className={styles.recentType}>{g.gameType}</span>
+                      <span className={styles.recentDate}>{fmtDate(g.playedAt)}</span>
+                    </div>
+                    <div className={styles.recentRight}>
+                      <span style={{ color: outcomeColor(g.outcome), fontWeight:700, fontSize:13 }}>{g.outcome}</span>
+                      {g.pointsEarned > 0 && <span className={styles.recentPts}>+{g.pointsEarned} pts</span>}
+                    </div>
+                  </div>
+                ))
+              }
+              <button className={styles.seeAll} onClick={() => setTab('history')}>See all games →</button>
+            </div>
+          </div>
+        )}
+
+        {/* ── History ── */}
+        {tab === 'history' && (
+          <div className={styles.card}>
+            <div className={styles.histHeader}>
+              <h3 className={styles.cardTitle}>🎮 Game History</h3>
+              <select className={styles.filterSelect} value={gameFilter}
+                onChange={e => { setGameFilter(e.target.value); loadHistory(1, e.target.value) }}>
+                <option value="">All Games</option>
+                <option value="Ludo">Ludo</option>
+                <option value="SnakesAndLadders">Snakes &amp; Ladders</option>
+                <option value="TableTennis">Table Tennis</option>
+                <option value="ParkingJam">Parking Jam</option>
+              </select>
+            </div>
+            {history.length === 0
+              ? <p className={styles.empty}>No games found.</p>
+              : (
+                <table className={styles.histTable}>
+                  <thead>
+                    <tr><th>Game</th><th>Outcome</th><th>Score</th><th>Points</th><th>Earned</th><th>Opponents</th><th>Date</th></tr>
+                  </thead>
+                  <tbody>
+                    {history.map((g, i) => (
+                      <tr key={i}>
+                        <td className={styles.tdGame}>{g.gameType}</td>
+                        <td><span style={{ color: outcomeColor(g.outcome), fontWeight:700 }}>{outcomeIcon(g.outcome)} {g.outcome}</span></td>
+                        <td>{g.score}</td>
+                        <td><span className={styles.ptsBadge}>+{g.pointsEarned}</span></td>
+                        <td>{g.moneyEarned > 0 ? fmtMoney(g.moneyEarned) : '—'}</td>
+                        <td>{g.opponentCount}</td>
+                        <td className={styles.tdDate}>{fmtDate(g.playedAt)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )
+            }
+            {histTotal > 10 && (
+              <div className={styles.pagination}>
+                <button disabled={histPage <= 1} onClick={() => loadHistory(histPage - 1, gameFilter)}>← Prev</button>
+                <span>Page {histPage} of {Math.ceil(histTotal / 10)}</span>
+                <button disabled={histPage >= Math.ceil(histTotal / 10)} onClick={() => loadHistory(histPage + 1, gameFilter)}>Next →</button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── Wallet ── */}
+        {tab === 'wallet' && (
+          <div className={styles.walletGrid}>
+            <div className={styles.card}>
+              <h3 className={styles.cardTitle}>💰 Wallet</h3>
+              <div className={styles.balanceBig}>{fmtMoney(w.balance)}</div>
+              {w.pendingWithdrawals > 0 && <p className={styles.pending}>⏳ Pending: {fmtMoney(w.pendingWithdrawals)}</p>}
+
+              <h4 className={styles.subTitle}>Request Withdrawal</h4>
+              {withdrawMsg && (
+                <div className={`${styles.msg} ${withdrawMsg.ok ? styles.msgOk : styles.msgErr}`}>{withdrawMsg.text}</div>
+              )}
+              <form onSubmit={handleWithdraw} className={styles.form}>
+                <div className={styles.formRow}>
+                  <label>Amount (৳)</label>
+                  <input type="number" min="10" step="0.01" placeholder="10.00" required
+                    value={withdrawForm.amount}
+                    onChange={e => setWithdrawForm(f => ({ ...f, amount: e.target.value }))}/>
+                </div>
+                <div className={styles.formRow}>
+                  <label>Method</label>
+                  <select value={withdrawForm.method}
+                    onChange={e => setWithdrawForm(f => ({ ...f, method: e.target.value }))}>
+                    <option value="bkash">bKash</option>
+                    <option value="nagad">Nagad</option>
+                    <option value="rocket">Rocket</option>
+                    <option value="bank">Bank Transfer</option>
+                  </select>
+                </div>
+                <div className={styles.formRow}>
+                  <label>Account Number</label>
+                  <input type="text" placeholder="01XXXXXXXXX" required
+                    value={withdrawForm.accountInfo}
+                    onChange={e => setWithdrawForm(f => ({ ...f, accountInfo: e.target.value }))}/>
+                </div>
+                <button className="btn btn-primary" type="submit" disabled={withdrawing}>
+                  {withdrawing ? 'Submitting...' : 'Request Withdrawal'}
+                </button>
+              </form>
+            </div>
+
+            <div className={styles.card}>
+              <h3 className={styles.cardTitle}>📋 Transactions</h3>
+              {txnLoading
+                ? <div className={styles.spinner}/>
+                : txns.length === 0
+                  ? <p className={styles.empty}>No transactions yet.</p>
+                  : (
+                    <table className={styles.txnTable}>
+                      <thead><tr><th>Type</th><th>Amount</th><th>Date</th></tr></thead>
+                      <tbody>
+                        {txns.map((t, i) => (
+                          <tr key={i}>
+                            <td>{t.type || t.transactionType || 'Transaction'}</td>
+                            <td className={(t.amount || 0) >= 0 ? styles.txnPos : styles.txnNeg}>
+                              {(t.amount || 0) >= 0 ? '+' : ''}{fmtMoney(t.amount)}
+                            </td>
+                            <td>{fmtDate(t.createdAt || t.date)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )
+              }
+            </div>
+          </div>
+        )}
+
+        {/* ── Profile ── */}
+        {tab === 'profile' && (
+          <ProfileEdit user={user} dashboard={d} onSave={loadCore}/>
+        )}
+
+        <div className={styles.actions}>
+          <Link to="/games" className="btn btn-primary btn-lg">🎮 Play Games</Link>
+          <button className="btn btn-ghost btn-lg" onClick={logout}>Sign Out</button>
+        </div>
+      </div>
+    </div>
+  )
+}

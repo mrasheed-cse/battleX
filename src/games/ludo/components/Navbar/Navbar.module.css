@@ -1,0 +1,46 @@
+.playerContainer {
+    display: flex;
+    align-items: center;
+    flex-direction: row;
+    width: 100%;
+    transition: all 0.3s ease;
+}
+
+.red {
+    margin-bottom: 20px;
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.yellow {
+    margin-bottom: 20px;
+    flex-flow: row-reverse;
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.blue {
+    margin-top: 20px;
+    grid-column: 1;
+    grid-row: 4;
+}
+
+.green {
+    margin-top: 20px;
+    flex-flow: row-reverse;
+    grid-column: 2;
+    grid-row: 4;
+}
+
+@media (max-width: 500px) {
+
+    .red,
+    .yellow {
+        margin-bottom: 5px;
+    }
+
+    .blue,
+    .green {
+        margin-top: 5px;
+    }
+}

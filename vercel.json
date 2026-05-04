@@ -1,0 +1,14 @@
+{
+  "redirects": [
+    {
+      "source": "/games/ludo/play",
+      "destination": "/games/ludo/index.html",
+      "permanent": false
+    }
+  ],
+  "rewrites": [
+    { "source": "/api/backend/:path*", "destination": "/api/backend?path=:path*" },
+    { "source": "/games/ludo/(.*)",    "destination": "/games/ludo/$1" },
+    { "source": "/((?!api/).*)",       "destination": "/index.html" }
+  ]
+}

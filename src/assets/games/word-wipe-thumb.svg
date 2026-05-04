@@ -1,0 +1,95 @@
+<svg width="600" height="380" viewBox="0 0 600 380" xmlns="http://www.w3.org/2000/svg">
+<rect width="600" height="380" fill="linear-gradient(135deg, #1a0533, #2d1060, #0d1f3d)"/>
+<rect width="600" height="380" fill="#1a0533"/>
+<rect width="600" height="380" fill="url(#bg)"/>
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#1a0533"/>
+    <stop offset="50%" stop-color="#2d1060"/>
+    <stop offset="100%" stop-color="#0d1f3d"/>
+  </linearGradient>
+  <linearGradient id="tr" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f472b6"/><stop offset="100%" stop-color="#be185d"/></linearGradient>
+  <linearGradient id="tb" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#60a5fa"/><stop offset="100%" stop-color="#1d4ed8"/></linearGradient>
+  <linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#34d399"/><stop offset="100%" stop-color="#065f46"/></linearGradient>
+  <linearGradient id="ty" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#b45309"/></linearGradient>
+  <linearGradient id="tp" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#a78bfa"/><stop offset="100%" stop-color="#5b21b6"/></linearGradient>
+  <linearGradient id="to" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#fb923c"/><stop offset="100%" stop-color="#c2410c"/></linearGradient>
+</defs>
+<rect width="600" height="380" fill="url(#bg)"/>
+
+<!-- Glow -->
+<circle cx="300" cy="190" r="160" fill="#7c3aed" opacity="0.12"/>
+
+<!-- Row 1: W I P E -->
+<g transform="translate(118, 68)">
+  <rect width="72" height="72" rx="14" fill="url(#tr)"/>
+  <rect x="4" y="4" width="64" height="32" rx="8" fill="rgba(255,255,255,0.22)"/>
+  <text x="36" y="50" text-anchor="middle" fill="white" font-family="Arial Black,sans-serif" font-size="34" font-weight="900">W</text>
+</g>
+<g transform="translate(202, 68)">
+  <rect width="72" height="72" rx="14" fill="url(#tb)"/>
+  <rect x="4" y="4" width="64" height="32" rx="8" fill="rgba(255,255,255,0.22)"/>
+  <text x="36" y="50" text-anchor="middle" fill="white" font-family="Arial Black,sans-serif" font-size="34" font-weight="900">I</text>
+</g>
+<g transform="translate(286, 68)">
+  <rect width="72" height="72" rx="14" fill="url(#tg)"/>
+  <rect x="4" y="4" width="64" height="32" rx="8" fill="rgba(255,255,255,0.22)"/>
+  <text x="36" y="50" text-anchor="middle" fill="white" font-family="Arial Black,sans-serif" font-size="34" font-weight="900">P</text>
+</g>
+<g transform="translate(370, 68)">
+  <rect width="72" height="72" rx="14" fill="url(#ty)"/>
+  <rect x="4" y="4" width="64" height="32" rx="8" fill="rgba(255,255,255,0.22)"/>
+  <text x="36" y="50" text-anchor="middle" fill="white" font-family="Arial Black,sans-serif" font-size="34" font-weight="900">E</text>
+</g>
+
+<!-- Row 2: W O R D (highlighted selection) -->
+<g transform="translate(118, 154)">
+  <rect width="72" height="72" rx="14" fill="url(#tp)"/>
+  <rect x="4" y="4" width="64" height="32" rx="8" fill="rgba(255,255,255,0.22)"/>
+  <text x="36" y="50" text-anchor="middle" fill="white" font-family="Arial Black,sans-serif" font-size="34" font-weight="900">W</text>
+</g>
+<g transform="translate(202, 154)">
+  <rect width="72" height="72" rx="14" fill="url(#to)"/>
+  <rect x="4" y="4" width="64" height="32" rx="8" fill="rgba(255,255,255,0.22)"/>
+  <text x="36" y="50" text-anchor="middle" fill="white" font-family="Arial Black,sans-serif" font-size="34" font-weight="900">O</text>
+</g>
+<g transform="translate(286, 154)">
+  <rect width="72" height="72" rx="14" fill="url(#tr)"/>
+  <rect x="4" y="4" width="64" height="32" rx="8" fill="rgba(255,255,255,0.22)"/>
+  <text x="36" y="50" text-anchor="middle" fill="white" font-family="Arial Black,sans-serif" font-size="34" font-weight="900">R</text>
+</g>
+<g transform="translate(370, 154)">
+  <rect width="72" height="72" rx="14" fill="url(#tb)"/>
+  <rect x="4" y="4" width="64" height="32" rx="8" fill="rgba(255,255,255,0.22)"/>
+  <text x="36" y="50" text-anchor="middle" fill="white" font-family="Arial Black,sans-serif" font-size="34" font-weight="900">D</text>
+</g>
+
+<!-- Selection line connecting W-O-R-D on row 2 -->
+<line x1="154" y1="190" x2="238" y2="190" stroke="#fbbf24" stroke-width="5" stroke-linecap="round" opacity="0.9"/>
+<line x1="238" y1="190" x2="322" y2="190" stroke="#fbbf24" stroke-width="5" stroke-linecap="round" opacity="0.9"/>
+<line x1="322" y1="190" x2="406" y2="190" stroke="#fbbf24" stroke-width="5" stroke-linecap="round" opacity="0.9"/>
+<circle cx="154" cy="190" r="9" fill="#fbbf24"/>
+<circle cx="406" cy="190" r="9" fill="#fbbf24"/>
+
+<!-- Row 3: P L A Y -->
+<g transform="translate(118, 240)">
+  <rect width="72" height="72" rx="14" fill="url(#tg)"/>
+  <rect x="4" y="4" width="64" height="32" rx="8" fill="rgba(255,255,255,0.22)"/>
+  <text x="36" y="50" text-anchor="middle" fill="white" font-family="Arial Black,sans-serif" font-size="34" font-weight="900">P</text>
+</g>
+<g transform="translate(202, 240)">
+  <rect width="72" height="72" rx="14" fill="url(#ty)"/>
+  <rect x="4" y="4" width="64" height="32" rx="8" fill="rgba(255,255,255,0.22)"/>
+  <text x="36" y="50" text-anchor="middle" fill="white" font-family="Arial Black,sans-serif" font-size="34" font-weight="900">L</text>
+</g>
+<g transform="translate(286, 240)">
+  <rect width="72" height="72" rx="14" fill="url(#tp)"/>
+  <rect x="4" y="4" width="64" height="32" rx="8" fill="rgba(255,255,255,0.22)"/>
+  <text x="36" y="50" text-anchor="middle" fill="white" font-family="Arial Black,sans-serif" font-size="34" font-weight="900">A</text>
+</g>
+<g transform="translate(370, 240)">
+  <rect width="72" height="72" rx="14" fill="url(#to)"/>
+  <rect x="4" y="4" width="64" height="32" rx="8" fill="rgba(255,255,255,0.22)"/>
+  <text x="36" y="50" text-anchor="middle" fill="white" font-family="Arial Black,sans-serif" font-size="34" font-weight="900">Y</text>
+</g>
+</svg>

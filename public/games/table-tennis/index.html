@@ -1,0 +1,2529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Table Tennis — Online Multiplayer</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Rajdhani:wght@500;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{width:100%;height:100%;overflow:hidden;touch-action:none;}
+body{background:#0a0a18;font-family:'Rajdhani',sans-serif;user-select:none;
+  padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);
+  padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right);}
+#c3d{position:absolute;top:0;left:0;touch-action:none;}
+#c2d{position:absolute;top:0;left:0;pointer-events:none;z-index:5;touch-action:none;}
+
+/* HUD */
+#hud{position:fixed;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-start;
+  padding:max(10px,env(safe-area-inset-top)) 16px 8px;
+  background:linear-gradient(180deg,rgba(0,0,0,.82),transparent);pointer-events:none;z-index:20;}
+.sp{display:flex;flex-direction:column;align-items:center;}
+.slabel{font-size:clamp(8px,2vw,10px);font-weight:700;letter-spacing:3px;color:#aab;text-transform:uppercase;margin-bottom:1px;}
+.sval{font-family:'Bebas Neue',cursive;font-size:clamp(38px,10vw,64px);line-height:1;}
+.sval.p{color:#ff2233;text-shadow:0 0 28px rgba(255,34,51,.9);}
+.sval.a{color:#2255ff;text-shadow:0 0 28px rgba(34,85,255,.9);}
+#ctrhud{display:flex;flex-direction:column;align-items:center;gap:3px;padding-top:6px;}
+#minfo{font-family:'Bebas Neue',cursive;font-size:clamp(11px,3vw,15px);letter-spacing:3px;color:#556;}
+#servelbl{font-size:clamp(9px,2.5vw,11px);font-weight:700;letter-spacing:2px;color:#ffc107;text-transform:uppercase;
+  padding:2px 8px;border:1px solid rgba(255,193,7,.4);border-radius:4px;background:rgba(255,193,7,.10);}
+
+/* Screens */
+.scr{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  z-index:100;background:rgba(4,4,18,.96);backdrop-filter:blur(14px);
+  padding:20px 20px max(20px,env(safe-area-inset-bottom,20px)) 20px;}
+.scr.hide{display:none;}
+.gtitle{font-family:'Bebas Neue',cursive;font-size:clamp(42px,12vw,96px);letter-spacing:6px;
+  background:linear-gradient(135deg,#ff2233,#fff,#2255ff);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:4px;text-align:center;}
+.sub{font-size:clamp(10px,2.5vw,12px);letter-spacing:5px;color:#445;text-transform:uppercase;margin-bottom:28px;}
+.btn{font-family:'Bebas Neue',cursive;font-size:clamp(16px,4vw,21px);letter-spacing:3px;
+  padding:clamp(10px,3vw,14px) clamp(32px,8vw,50px);border:none;border-radius:4px;cursor:pointer;transition:all .18s;margin:4px;min-height:48px;}
+.bp{background:linear-gradient(135deg,#00b4d8,#0077b6);color:#fff;box-shadow:0 0 28px rgba(0,180,216,.5);}
+.bp:active{transform:scale(1.04);box-shadow:0 0 48px rgba(0,180,216,.8);}
+.bs{background:rgba(255,255,255,.06);color:#888;border:1px solid rgba(255,255,255,.14);}
+.bs:active{background:rgba(255,255,255,.12);color:#ddd;}
+.diffs{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap;justify-content:center;}
+.db{font-family:'Rajdhani',sans-serif;font-size:clamp(11px,3vw,13px);font-weight:700;letter-spacing:2px;
+  padding:clamp(7px,2vw,9px) clamp(18px,5vw,24px);border-radius:4px;
+  border:1px solid rgba(255,255,255,.14);background:transparent;color:#666;
+  cursor:pointer;transition:all .18s;text-transform:uppercase;min-height:44px;}
+.db.on{border-color:#ff2233;color:#ff2233;background:rgba(255,34,51,.10);}
+
+/* Toast */
+#toast{position:fixed;top:42%;left:50%;transform:translate(-50%,-50%);
+  font-family:'Bebas Neue',cursive;font-size:clamp(30px,8vw,68px);letter-spacing:6px;
+  color:#fff;text-shadow:0 0 40px rgba(255,255,255,.9);pointer-events:none;z-index:200;opacity:0;transition:opacity .14s;}
+#toast.show{opacity:1;}
+
+/* Celebration canvas */
+#celCanvas{position:fixed;inset:0;pointer-events:none;z-index:150;}
+#celOverlay{position:fixed;inset:0;pointer-events:none;z-index:149;opacity:0;transition:opacity 0.08s;}
+
+/* Desktop only */
+#spinbox{position:fixed;bottom:max(14px,env(safe-area-inset-bottom));right:16px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  background:rgba(0,0,0,.65);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:6px 10px;pointer-events:none;z-index:20;}
+#spinlbl{font-size:8px;letter-spacing:2px;color:#556;text-transform:uppercase;}
+#spinbg{width:48px;height:4px;background:rgba(255,255,255,.1);border-radius:2px;overflow:hidden;}
+#spinbar{height:100%;width:0%;background:linear-gradient(90deg,#ff2233,#2255ff);border-radius:2px;}
+#spintype{font-size:9px;font-weight:700;color:#889;letter-spacing:1px;}
+#hint{position:fixed;bottom:max(14px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);
+  pointer-events:none;z-index:20;font-size:10px;letter-spacing:2px;color:#445;text-transform:uppercase;white-space:nowrap;}
+#optswitch{position:fixed;bottom:max(14px,env(safe-area-inset-bottom));left:16px;z-index:30;display:flex;flex-direction:column;gap:4px;pointer-events:all;}
+#optswitch button{font-family:"Bebas Neue",cursive;font-size:clamp(10px,2.5vw,13px);letter-spacing:2px;
+  padding:5px 12px;border:1px solid rgba(255,255,255,0.25);border-radius:4px;background:rgba(0,0,0,0.55);color:#aab;cursor:pointer;transition:all .18s;text-align:left;min-height:32px;}
+#optswitch button.active{border-color:#ffc107;color:#ffc107;background:rgba(255,193,7,0.12);}
+#optlabel{font-size:9px;letter-spacing:2px;color:#445;text-transform:uppercase;text-align:center;}
+
+/* Mobile controls */
+#mobile-controls{display:none;position:fixed;bottom:0;left:0;right:0;z-index:30;
+  padding:0 14px max(10px,env(safe-area-inset-bottom)) 14px;
+  background:linear-gradient(0deg,rgba(0,0,0,0.80) 0%,rgba(0,0,0,0.20) 80%,transparent 100%);}
+#mobile-btn-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0 4px;}
+#btn-serve{font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:2px;padding:0 22px;height:54px;
+  border:2px solid #ffc107;border-radius:10px;background:rgba(255,193,7,0.15);color:#ffc107;cursor:pointer;
+  flex:1;max-width:170px;transition:all .12s;box-shadow:0 0 18px rgba(255,193,7,0.3);}
+#btn-serve:active{background:rgba(255,193,7,0.38);transform:scale(0.96);}
+#btn-serve.hidden{opacity:0;pointer-events:none;}
+#btn-spin{font-family:'Bebas Neue',cursive;font-size:17px;letter-spacing:2px;padding:0 18px;height:54px;
+  border:2px solid rgba(255,34,51,0.45);border-radius:10px;background:rgba(255,34,51,0.10);color:#ff6677;cursor:pointer;
+  flex:1;max-width:150px;transition:all .12s;-webkit-user-select:none;user-select:none;}
+#btn-spin.pressed{background:rgba(255,34,51,0.30);border-color:#ff2233;color:#fff;box-shadow:0 0 22px rgba(255,34,51,0.55);}
+#mobile-spin{display:flex;flex-direction:column;align-items:center;gap:3px;min-width:58px;}
+#m-spinlbl{font-size:8px;letter-spacing:2px;color:#556;text-transform:uppercase;}
+#m-spinbg{width:50px;height:5px;background:rgba(255,255,255,.12);border-radius:3px;overflow:hidden;}
+#m-spinbar{height:100%;width:0%;background:linear-gradient(90deg,#ff2233,#ff6600,#2255ff);border-radius:3px;}
+#m-spintype{font-size:9px;font-weight:700;color:#889;letter-spacing:1px;}
+#touch-hint{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);font-size:11px;letter-spacing:2px;
+  color:rgba(255,255,255,0.4);text-transform:uppercase;pointer-events:none;z-index:25;text-align:center;transition:opacity 0.6s;white-space:nowrap;}
+#bat-touch-ring{position:fixed;pointer-events:none;z-index:15;width:60px;height:60px;border-radius:50%;
+  border:2px solid rgba(255,34,51,0.6);background:rgba(255,34,51,0.08);transform:translate(-50%,-50%);display:none;}
+#bat-touch-ring.active{display:block;}
+#bat-touch-ring.hitting{border-color:rgba(255,200,0,0.9);background:rgba(255,200,0,0.15);transform:translate(-50%,-50%) scale(1.3);}
+
+/* Result */
+#rinfo{font-size:clamp(13px,3.5vw,16px);letter-spacing:3px;color:#aab;text-transform:uppercase;margin-bottom:8px;}
+#rscore{font-family:'Bebas Neue',cursive;font-size:clamp(42px,12vw,64px);letter-spacing:8px;margin-bottom:22px;}
+.wc{color:#ff2233;}.lc{color:#2255ff;}
+.dline{width:50px;height:1px;background:rgba(255,255,255,.15);margin:10px auto;}
+
+@media (max-width:768px),(pointer:coarse){
+  #optswitch{display:none !important;}
+  #spinbox{display:none !important;}
+  #hint{display:none !important;}
+  #mobile-controls{display:block !important;}
+}
+@media (max-height:500px) and (orientation:landscape){
+  .sval{font-size:clamp(28px,8vh,42px);}
+  #mobile-controls{padding-bottom:max(4px,env(safe-area-inset-bottom));}
+  #mobile-btn-row{padding:3px 0;}
+  #btn-serve,#btn-spin{height:46px;}
+  #touch-hint{bottom:70px;}
+}
+</style>
+
+
+
+<!-- ═══════════════════════════════════════════════════════════════
+     BattleX Ad Bridge v2 — Table Tennis
+     Routes all AdMob calls to BattleX parent frame via postMessage
+═══════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+  var _pendingIntCb  = null;  // interstitial callback
+  var _pendingRewCb  = null;  // rewarded callback
+  var _fallback      = null;  // safety timer
+  var _inParent      = window.parent && window.parent !== window;
+
+  // ── Listen for ad-complete messages from BattleX ──────────────
+  window.addEventListener('message', function(e) {
+    var d = e.data;
+    if (!d || typeof d !== 'object') return;
+
+    if (d.type === 'BATTLEX_AD_COMPLETE') {
+      if (_fallback) { clearTimeout(_fallback); _fallback = null; }
+
+      if (_pendingRewCb) {
+        var cb = _pendingRewCb; _pendingRewCb = null;
+        cb(d.rewarded === true);
+      } else if (_pendingIntCb) {
+        var cb = _pendingIntCb; _pendingIntCb = null;
+        cb();
+      }
+    }
+  });
+
+  // ── Helper: send ad request to parent ─────────────────────────
+  function requestAd(adType) {
+    if (!_inParent) return false;
+    window.parent.postMessage({
+      type: 'BATTLEX_SHOW_AD',
+      adType: adType,
+      game: 'table-tennis'
+    }, '*');
+    return true;
+  }
+
+  // ── Helper: safety fallback if parent never responds ──────────
+  function startFallback(isRewarded) {
+    if (_fallback) clearTimeout(_fallback);
+    _fallback = setTimeout(function() {
+      _fallback = null;
+      if (isRewarded && _pendingRewCb) {
+        var cb = _pendingRewCb; _pendingRewCb = null; cb(false);
+      } else if (_pendingIntCb) {
+        var cb = _pendingIntCb; _pendingIntCb = null; cb();
+      }
+    }, 10000);
+  }
+
+  // ── Override window.AdMob with BattleX bridge ─────────────────
+  window.AdMob = {
+
+    showInterstitial: function() {
+      // Store what to call when ad closes
+      _pendingIntCb = function() {
+        if (typeof window.onInterstitialClosed === 'function') {
+          window.onInterstitialClosed();
+        }
+      };
+      if (requestAd('interstitial')) {
+        startFallback(false);
+      } else {
+        // Not in BattleX frame — fire callback immediately
+        var cb = _pendingIntCb; _pendingIntCb = null;
+        if (cb) cb();
+      }
+    },
+
+    showRewarded: function() {
+      _pendingRewCb = function(earned) {
+        if (typeof window.onRewardedClosed === 'function') {
+          window.onRewardedClosed(!!earned);
+        }
+      };
+      if (requestAd('rewarded')) {
+        startFallback(true);
+      } else {
+        var cb = _pendingRewCb; _pendingRewCb = null;
+        if (cb) cb(false);
+      }
+    },
+
+    showBanner: function() {
+      if (_inParent) {
+        window.parent.postMessage({ type: 'BATTLEX_SHOW_AD', adType: 'banner', game: 'table-tennis' }, '*');
+      }
+    },
+
+    hideBanner: function() {
+      if (_inParent) {
+        window.parent.postMessage({ type: 'BATTLEX_HIDE_BANNER', game: 'table-tennis' }, '*');
+      }
+    },
+
+    loadInterstitial: function() { /* preload handled by BattleX */ },
+    loadRewarded:     function() { /* preload handled by BattleX */ },
+  };
+
+  console.log('[BattleX] Ad bridge v2 loaded — inParent:', _inParent);
+})();
+</script>
+
+</head>
+<body>
+<canvas id="c3d"></canvas>
+<canvas id="c2d"></canvas>
+<div id="bat-touch-ring"></div>
+
+<div id="hud">
+  <div class="sp"><div class="slabel" id="lbl-you">You</div><div class="sval p" id="ps">0</div></div>
+  <div id="ctrhud"><div id="minfo">First to 11</div><div id="servelbl">Your Serve</div></div>
+  <div class="sp"><div class="slabel" id="lbl-opp">Opponent</div><div class="sval a" id="as">0</div></div>
+</div>
+
+<div id="spinbox">
+  <div id="spinlbl">Spin</div><div id="spinbg"><div id="spinbar"></div></div><div id="spintype">—</div>
+</div>
+<div id="hint">🖱 Move to control bat · Click/Tap: Serve · Hold: Spin</div>
+<div id="optswitch">
+  <div id="optlabel">Serve Style</div>
+  <button class="active" onclick="setOpt(0)">A · Arrow</button>
+  <button onclick="setOpt(1)">B · Radar</button>
+  <button onclick="setOpt(2)">C · Crosshair</button>
+  <button onclick="setOpt(3)">D · Power Bar</button>
+  <button onclick="setOpt(4)">E · Orbit Ring</button>
+  <button onclick="setOpt(5)">F · Sonar Ping</button>
+  <button onclick="setOpt(6)">G · DNA Helix</button>
+  <button onclick="setOpt(7)">H · Shockwave</button>
+</div>
+
+<div id="mobile-controls">
+  <div id="mobile-btn-row">
+    <div id="mobile-spin">
+      <div id="m-spinlbl">Spin</div>
+      <div id="m-spinbg"><div id="m-spinbar"></div></div>
+      <div id="m-spintype">—</div>
+    </div>
+    <button id="btn-serve" ontouchstart="mobileServe(event)">SERVE</button>
+    <button id="btn-spin"
+      ontouchstart="mobileSpinStart(event)" ontouchend="mobileSpinEnd(event)"
+      onmousedown="mobileSpinStart(event)" onmouseup="mobileSpinEnd(event)">⟳ SPIN</button>
+  </div>
+</div>
+
+<div id="touch-hint">Drag anywhere to move bat</div>
+<canvas id="celCanvas"></canvas><div id="celOverlay"></div>
+<div id="toast"></div>
+
+<!-- MAIN MENU -->
+<div class="scr" id="smenu">
+  <div class="gtitle">Table Tennis</div>
+  <div class="sub">Online Multiplayer</div>
+  <!-- Player name input -->
+  <div style="margin-bottom:20px;display:flex;flex-direction:column;align-items:center;gap:8px;">
+    <div style="font-size:10px;letter-spacing:3px;color:#556;text-transform:uppercase;margin-bottom:2px;">Your Name</div>
+    <input id="input-myname" type="text" maxlength="16" autocomplete="off" spellcheck="false"
+      placeholder="Enter your name"
+      style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;letter-spacing:2px;
+      text-align:center;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.22);
+      border-radius:6px;color:#fff;padding:9px 16px;width:clamp(200px,55vw,280px);outline:none;" />
+  </div>
+  <div style="display:flex;gap:12px;margin-bottom:8px;">
+    <button class="btn bp" id="btn-host">🏓 Host Game</button>
+    <button class="btn bp" id="btn-join-open">🔗 Join Game</button>
+  </div>
+  <button class="btn bs" id="btn-vs-cpu">vs CPU</button>
+  <div id="net-status" style="margin-top:18px;font-size:11px;letter-spacing:2px;color:#445;text-transform:uppercase;">Connecting to network…</div>
+</div>
+
+<!-- JOIN SCREEN -->
+<div class="scr hide" id="sjoin">
+  <div class="gtitle" style="font-size:clamp(32px,7vw,64px);">Join Game</div>
+  <div class="sub">Enter the 6-digit code</div>
+  <input id="join-code-input" type="number" inputmode="numeric" pattern="[0-9]*"
+    maxlength="6" min="100000" max="999999"
+    style="font-family:'Bebas Neue',cursive;font-size:clamp(36px,10vw,72px);letter-spacing:10px;
+    text-align:center;background:rgba(255,255,255,0.06);border:2px solid rgba(255,255,255,0.25);
+    border-radius:8px;color:#ffc107;padding:12px 20px;width:clamp(260px,75vw,360px);
+    outline:none;margin-bottom:16px;-moz-appearance:textfield;"
+    placeholder="——————" oninput="this.value=this.value.slice(0,6)" />
+  <button class="btn bp" id="btn-join-confirm">Connect</button>
+  <button class="btn bs" style="margin-top:6px;" id="btn-join-back">Back</button>
+  <div id="join-error" style="color:#ff4455;font-size:12px;letter-spacing:2px;margin-top:10px;
+    min-height:18px;text-align:center;max-width:360px;line-height:1.5;"></div>
+</div>
+
+<!-- LOBBY / WAITING SCREEN -->
+<div class="scr hide" id="slobby">
+  <div class="gtitle" style="font-size:clamp(28px,6vw,56px);" id="lobby-title">Waiting…</div>
+  <div class="sub" id="lobby-sub">Tell your opponent this code</div>
+  <div id="room-code-display"
+    style="font-family:'Bebas Neue',cursive;font-size:clamp(64px,18vw,120px);
+    letter-spacing:clamp(8px,3vw,20px);color:#ffc107;
+    text-shadow:0 0 40px rgba(255,193,7,0.8),0 0 80px rgba(255,193,7,0.4);
+    margin:8px 0 4px;line-height:1;">
+    ···
+  </div>
+  <div style="font-size:11px;letter-spacing:3px;color:#445;text-transform:uppercase;margin-bottom:12px;">
+    Share by voice · SMS · WhatsApp
+  </div>
+  <button class="btn bs" id="btn-copy-code" style="font-size:14px;padding:8px 28px;margin-bottom:14px;">📋 Copy</button>
+  <div id="lobby-status" style="font-size:12px;letter-spacing:3px;color:#556;
+    text-transform:uppercase;text-align:center;">
+    Waiting for opponent…
+  </div>
+  <div id="lobby-ping" style="font-size:11px;letter-spacing:2px;color:#334;margin-top:6px;"></div>
+  <button class="btn bs" style="margin-top:18px;font-size:13px;" id="btn-lobby-cancel">Cancel</button>
+</div>
+
+<!-- RESULT SCREEN -->
+<div class="scr hide" id="sresult">
+  <div id="rtitle" class="gtitle">Victory</div><div class="dline"></div>
+  <div id="rinfo">Match Complete</div><div id="rscore"></div>
+  <button class="btn bp" id="brematch">Rematch</button>
+  <button class="btn bs" id="bmenu">Main Menu</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+<script>
+if(!CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r){
+    if(typeof r==='number')r={tl:r,tr:r,br:r,bl:r};
+    else r={tl:r[0]||0,tr:r[1]||r[0]||0,br:r[2]||r[0]||0,bl:r[3]||r[1]||r[0]||0};
+    this.moveTo(x+r.tl,y);this.lineTo(x+w-r.tr,y);this.quadraticCurveTo(x+w,y,x+w,y+r.tr);
+    this.lineTo(x+w,y+h-r.br);this.quadraticCurveTo(x+w,y+h,x+w-r.br,y+h);
+    this.lineTo(x+r.bl,y+h);this.quadraticCurveTo(x,y+h,x,y+h-r.bl);
+    this.lineTo(x,y+r.tl);this.quadraticCurveTo(x,y,x+r.tl,y);return this;
+  };
+}
+</script>
+<script>
+'use strict';
+
+var isMobile=('ontouchstart' in window)||(navigator.maxTouchPoints>0)||(innerWidth<=900);
+
+/* ── AUDIO ── */
+var AudioCtx=window.AudioContext||window.webkitAudioContext,audioCtx=null;
+function initAudio(){if(!audioCtx){audioCtx=new AudioCtx();}if(gstate==='play')fadeInBGM();}
+function noiseShot(freq,q,ft,vol,atk,dec){
+  if(!audioCtx)return;var now=audioCtx.currentTime,sr=audioCtx.sampleRate;
+  var len=Math.ceil(sr*(atk+dec+0.01)),buf=audioCtx.createBuffer(1,len,sr),d=buf.getChannelData(0);
+  for(var i=0;i<len;i++)d[i]=Math.random()*2-1;
+  var src=audioCtx.createBufferSource();src.buffer=buf;
+  var filt=audioCtx.createBiquadFilter();filt.type=ft;filt.frequency.value=freq;filt.Q.value=q;
+  var gain=audioCtx.createGain();gain.gain.setValueAtTime(0,now);gain.gain.linearRampToValueAtTime(vol,now+atk);
+  gain.gain.exponentialRampToValueAtTime(0.0001,now+atk+dec);
+  src.connect(filt);filt.connect(gain);gain.connect(audioCtx.destination);src.start(now);src.stop(now+atk+dec+0.015);
+}
+function toneShot(type,freq,freqEnd,vol,dec,st){
+  if(!audioCtx)return;var t=st||audioCtx.currentTime;
+  var osc=audioCtx.createOscillator(),gain=audioCtx.createGain();
+  osc.type=type;osc.frequency.setValueAtTime(freq,t);if(freqEnd)osc.frequency.exponentialRampToValueAtTime(freqEnd,t+dec);
+  gain.gain.setValueAtTime(vol,t);gain.gain.exponentialRampToValueAtTime(0.0001,t+dec);
+  osc.connect(gain);gain.connect(audioCtx.destination);osc.start(t);osc.stop(t+dec+0.01);
+}
+/* ── BACKGROUND MUSIC ────────────────────────────────────────────────────
+ * Pure Web Audio synthesis — no external files needed.
+ * Upbeat looping rhythm: kick + hi-hat + melodic arpeggio bassline.
+ * Starts on first user interaction, stops when game ends.
+ * ─────────────────────────────────────────────────────────────────────── */
+var bgmNodes=[];var bgmRunning=false;var bgmGain=null;
+
+function startBGM(){
+  if(!audioCtx||bgmRunning)return;
+  bgmRunning=true;
+
+  bgmGain=audioCtx.createGain();
+  bgmGain.gain.setValueAtTime(0,audioCtx.currentTime);
+  bgmGain.gain.linearRampToValueAtTime(0.18,audioCtx.currentTime+3.0);
+  bgmGain.connect(audioCtx.destination);
+
+  /*
+   * ULTRA-MILD AMBIENT LOOP  —  60 BPM
+   *
+   * Just three elements, all very soft:
+   *   1. Slow sine-wave breath  — a single sustained note that
+   *      fades in and out like breathing. Deeply calm.
+   *   2. Occasional soft water-drop chime  — a pure sine bell
+   *      that plays every few beats, sparse and gentle.
+   *   3. Slow harmonic shimmer  — two detuned sines drifting
+   *      together, creating a subtle beating effect that feels
+   *      like concentration / focus.
+   *
+   * Volume is intentionally very low (0.18 master gain).
+   * You should barely notice it — it's there to fill silence.
+   */
+
+  var beat=1.0; /* 60 BPM */
+
+  /* Single breathing tone — fades in, holds, fades out, repeat */
+  function breath(t, freq, dur, vol){
+    var o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    var f=audioCtx.createBiquadFilter();
+    o.type='sine'; o.frequency.value=freq;
+    f.type='lowpass'; f.frequency.value=400;
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(vol, t+dur*0.35);
+    g.gain.setValueAtTime(vol, t+dur*0.60);
+    g.gain.linearRampToValueAtTime(0, t+dur);
+    o.connect(f); f.connect(g); g.connect(bgmGain);
+    o.start(t); o.stop(t+dur+0.1); bgmNodes.push(o);
+  }
+
+  /* Water-drop chime — pure sine, instant attack, slow fade */
+  function drop(t, freq){
+    var o=audioCtx.createOscillator(), g=audioCtx.createGain();
+    o.type='sine'; o.frequency.value=freq;
+    g.gain.setValueAtTime(0,t);
+    g.gain.linearRampToValueAtTime(0.08, t+0.005);
+    g.gain.exponentialRampToValueAtTime(0.001, t+beat*3.5);
+    o.connect(g); g.connect(bgmGain);
+    o.start(t); o.stop(t+beat*3.6); bgmNodes.push(o);
+  }
+
+  /* Shimmer — two close frequencies beating against each other */
+  function shimmer(t, freq, dur){
+    [freq, freq*1.004].forEach(function(fr){
+      var o=audioCtx.createOscillator(), g=audioCtx.createGain();
+      o.type='sine'; o.frequency.value=fr;
+      g.gain.setValueAtTime(0,t);
+      g.gain.linearRampToValueAtTime(0.025, t+dur*0.4);
+      g.gain.linearRampToValueAtTime(0, t+dur);
+      o.connect(g); g.connect(bgmGain);
+      o.start(t); o.stop(t+dur+0.1); bgmNodes.push(o);
+    });
+  }
+
+  /*
+   * 16-bar phrase (each bar = 4 beats = 4 seconds at 60 BPM)
+   * Chord roots cycling A → E → F → C (A minor feel)
+   */
+  var ROOTS  = [220, 164.8, 174.6, 130.8,  220, 164.8, 196, 220];
+  var DROPS  = [880, 659.3, 698.5, 523.2,  880, 783.9, 659.3, 880];
+  var DROP_BEATS = [0, 5, 11, 16, 20, 27]; /* which beats get a drop */
+
+  var AHEAD=0.20, INT=0.08;
+  var nxt=audioCtx.currentTime+0.1;
+  var tk=0; /* beat counter */
+
+  function sched(){
+    if(!bgmRunning)return;
+    while(nxt<audioCtx.currentTime+AHEAD){
+      var t=nxt;
+      var tk32=tk%32;
+      var barN=Math.floor(tk32/4)%8;
+      var beatInBar=tk32%4;
+
+      /* Breath tone: held for whole bar, new one each bar on beat 0 */
+      if(beatInBar===0){
+        breath(t, ROOTS[barN],     beat*3.8, 0.055);
+        breath(t, ROOTS[barN]*1.5, beat*3.6, 0.030);
+        shimmer(t, ROOTS[barN]*2,  beat*3.4);
+      }
+
+      /* Water drops: only on specific beats */
+      var dropBeat=tk%32;
+      if(dropBeat===0)  drop(t, DROPS[0]);
+      if(dropBeat===6)  drop(t, DROPS[1]);
+      if(dropBeat===10) drop(t, DROPS[2]);
+      if(dropBeat===14) drop(t, DROPS[1]);
+      if(dropBeat===16) drop(t, DROPS[0]);
+      if(dropBeat===20) drop(t, DROPS[3]);
+      if(dropBeat===24) drop(t, DROPS[2]);
+      if(dropBeat===28) drop(t, DROPS[1]);
+
+      nxt+=beat; tk++;
+    }
+    setTimeout(sched, INT*1000);
+  }
+  sched();
+}
+function stopBGM(){
+  bgmRunning=false;
+  if(bgmGain&&audioCtx){
+    var t=audioCtx.currentTime;
+    try{
+      bgmGain.gain.cancelScheduledValues(t);
+      bgmGain.gain.setValueAtTime(Math.max(bgmGain.gain.value,0.001),t);
+      bgmGain.gain.exponentialRampToValueAtTime(0.0001,t+0.6);
+    }catch(ex){}
+  }
+  bgmNodes=[];bgmGain=null;
+}
+function fadeInBGM(){if(bgmRunning)return;startBGM();}
+
+/* ── CELEBRATION ─────────────────────────────────────────────────────── */
+var _cc=null,_celCtx=null,_cP=[],_cT=0,_cOn=false;
+function _eOut(t){return 1-Math.pow(1-t,3);}
+function _eBk(t){var c=2.70158;return 1+c*Math.pow(t-1,3)+(c-1)*Math.pow(t-1,2);}
+function _initCC(){
+  _cc=document.getElementById('celCanvas');
+  _cc.width=innerWidth;_cc.height=innerHeight;
+  _celCtx=_cc.getContext('2d');
+}
+function _spawn(ip){
+  if(!_cc)_initCC();
+  _cc.width=innerWidth;_cc.height=innerHeight;
+  _cP=[];_cT=0;_cOn=true;
+  var W=innerWidth,H=innerHeight,cx=W*.5,cy=H*.38;
+  var C1=ip?'#ff2233':'#2255ff',C2=ip?'#ff9900':'#00ccff',C3=ip?'#ffe600':'#aaddff';
+  /* 1 ring only */
+  _cP.push({k:'ring',x:cx,y:cy,r:0,mr:Math.min(W,H)*0.42,dl:0,life:0,dur:280,col:C1,lw:3});
+  /* sparks — 20/10 */
+  var N=ip?20:10;
+  for(var i=0;i<N;i++){
+    var a=Math.random()*Math.PI*2,sp=ip?(3+Math.random()*9):(2+Math.random()*6);
+    _cP.push({k:'spark',x:cx,y:cy,vx:Math.cos(a)*sp*(0.6+Math.random()*.8),vy:Math.sin(a)*sp*(0.6+Math.random()*.8)-2,grav:0.18+Math.random()*.15,
+      col:[C1,C2,C3,'#fff'][Math.floor(Math.random()*4)],sz:ip?(1.5+Math.random()*3):(1+Math.random()*2.5),tr:[],dl:Math.random()*30,life:0,dur:ip?(320+Math.random()*250):(220+Math.random()*180)});
+  }
+  /* ribbons — 12/0, very short */
+  if(ip){
+    var RC=['#ff2233','#ff9900','#ffe600','#00e676','#00b0ff','#cc44ff'];
+    var RN=isMobile?6:12;
+    for(var ri2=0;ri2<RN;ri2++){
+      _cP.push({k:'rib',x:Math.random()*W,y:-10+Math.random()*(-H*.15),
+        vx:(Math.random()-.5)*2.5,vy:2+Math.random()*3.5,spin:(Math.random()-.5)*.15,angle:Math.random()*Math.PI*2,
+        wx:6+Math.random()*8,wy:3+Math.random()*3,wF:0.004+Math.random()*.004,wA:25+Math.random()*30,
+        col:RC[Math.floor(Math.random()*RC.length)],dl:Math.random()*150,life:0,dur:500+Math.random()*300});
+    }
+  }
+  /* stars — 5/2 */
+  var SN=ip?5:2;
+  for(var si=0;si<SN;si++){
+    var a2=Math.random()*Math.PI*2,rd=ip?(10+Math.random()*100):(5+Math.random()*60);
+    _cP.push({k:'star',x:cx+Math.cos(a2)*rd,y:cy+Math.sin(a2)*rd,
+      sz:ip?(4+Math.random()*8):(2+Math.random()*5),rot:Math.random()*Math.PI*2,
+      col:ip?(Math.random()>.5?'#ffe600':'#fff'):(Math.random()>.5?'#aaddff':'#fff'),
+      dl:10+Math.random()*120,life:0,dur:280+Math.random()*200});
+  }
+  /* 1 floating label only */
+  _cP.push({k:'lbl',x:cx,y:cy-30,vx:0,vy:-1.8,
+    txt:ip?'+1':'+1',fs:ip?28:24,
+    col:C2,dl:0,life:0,dur:480});
+  /* big central text */
+  _cP.push({k:'big',x:cx,y:cy,txt:ip?'POINT!':oppName.toUpperCase()+'!',col:C1,
+    glow:ip?'rgba(255,50,30,0.95)':'rgba(30,85,255,0.95)',
+    fs:Math.round(Math.max(38,Math.min(88,W*.10))),dl:0,life:0,dur:480});
+  requestAnimationFrame(_frame);
+}
+function _frame(){
+  if(!_cOn||!_celCtx)return;
+  _cT+=16.7;
+  _celCtx.clearRect(0,0,_cc.width,_cc.height);
+  var any=false;
+  for(var i=0;i<_cP.length;i++){
+    var p=_cP[i];
+    if(_cT<p.dl){any=true;continue;}
+    p.life+=16.7;
+    var pr=Math.min(p.life/p.dur,1);
+    if(pr>=1)continue;
+    any=true;
+    if(p.k==='ring'){
+      p.r=p.mr*_eOut(pr);
+      _celCtx.beginPath();_celCtx.arc(p.x,p.y,Math.max(0,p.r),0,Math.PI*2);
+      _celCtx.strokeStyle=p.col;_celCtx.lineWidth=Math.max(.1,p.lw*(1-pr*.8));
+      _celCtx.globalAlpha=(1-pr)*(1-pr)*.9;_celCtx.stroke();_celCtx.globalAlpha=1;
+    }else if(p.k==='spark'){
+      p.x+=p.vx;p.y+=p.vy;p.vy+=p.grav;p.vx*=.983;p.vy*=.983;
+      p.tr.push({x:p.x,y:p.y});if(p.tr.length>9)p.tr.shift();
+      var al=Math.pow(1-pr,1.1);
+      if(p.tr.length>1){
+        _celCtx.beginPath();_celCtx.moveTo(p.tr[0].x,p.tr[0].y);
+        for(var ti=1;ti<p.tr.length;ti++)_celCtx.lineTo(p.tr[ti].x,p.tr[ti].y);
+        _celCtx.strokeStyle=p.col;_celCtx.lineWidth=p.sz*(1-pr*.5);_celCtx.lineCap='round';
+        _celCtx.globalAlpha=al*.55;_celCtx.stroke();_celCtx.lineCap='butt';
+      }
+      _celCtx.beginPath();_celCtx.arc(p.x,p.y,Math.max(.1,p.sz*(1-pr*.4)),0,Math.PI*2);
+      _celCtx.fillStyle=p.col;_celCtx.globalAlpha=al;_celCtx.fill();_celCtx.globalAlpha=1;
+    }else if(p.k==='rib'){
+      p.x+=p.vx+Math.sin(p.life*p.wF)*p.wA*.015;
+      p.y+=p.vy;p.vy+=.09;p.angle+=p.spin;
+      var al2=pr<.75?1:(1-(pr-.75)/.25);
+      _celCtx.save();_celCtx.translate(p.x,p.y);_celCtx.rotate(p.angle);
+      _celCtx.globalAlpha=al2;_celCtx.fillStyle=p.col;
+      _celCtx.fillRect(-p.wx/2,-p.wy/2,p.wx,p.wy);
+      _celCtx.restore();_celCtx.globalAlpha=1;
+    }else if(p.k==='star'){
+      var al3=pr<.25?(pr/.25):(1-pr)/.75,sc=.4+Math.sin(pr*Math.PI)*.6;
+      _celCtx.save();_celCtx.translate(p.x,p.y);_celCtx.rotate(p.rot+pr*Math.PI*1.5);_celCtx.scale(sc,sc);
+      _celCtx.globalAlpha=Math.max(0,al3);_celCtx.fillStyle=p.col;_celCtx.shadowColor='#fff';_celCtx.shadowBlur=p.sz*2;
+      _celCtx.beginPath();
+      for(var si2=0;si2<8;si2++){var r5=si2%2===0?p.sz:p.sz*.38,a5=(si2/8)*Math.PI*2;si2===0?_celCtx.moveTo(Math.cos(a5)*r5,Math.sin(a5)*r5):_celCtx.lineTo(Math.cos(a5)*r5,Math.sin(a5)*r5);}
+      _celCtx.closePath();_celCtx.fill();_celCtx.shadowBlur=0;_celCtx.restore();_celCtx.globalAlpha=1;
+    }else if(p.k==='lbl'){
+      p.x+=p.vx;p.y+=p.vy;p.vy+=.06;
+      var al4=pr<.55?_eOut(pr/.55):(1-(pr-.55)/.45);
+      _celCtx.font='bold '+Math.round(p.fs)+'px "Bebas Neue",sans-serif';
+      _celCtx.textAlign='center';_celCtx.globalAlpha=Math.max(0,al4);
+      _celCtx.fillStyle=p.col;_celCtx.shadowColor=p.col;_celCtx.shadowBlur=p.fs*.7;
+      _celCtx.fillText(p.txt,p.x,p.y);_celCtx.shadowBlur=0;_celCtx.globalAlpha=1;_celCtx.textAlign='left';
+    }else if(p.k==='big'){
+      var sc2=pr<.42?_eBk(pr/.42):(1-(pr-.42)/.58*.12);
+      var al5=pr<.5?1:(1-(pr-.5)/.5);
+      _celCtx.save();_celCtx.translate(p.x,p.y);_celCtx.scale(Math.max(0,sc2),Math.max(0,sc2));
+      _celCtx.font='bold '+p.fs+'px "Bebas Neue",sans-serif';_celCtx.textAlign='center';
+      _celCtx.globalAlpha=Math.max(0,al5);
+      _celCtx.fillStyle=p.glow;_celCtx.shadowColor=p.glow;
+      [p.fs*1.6,p.fs*.9,p.fs*.4].forEach(function(b){_celCtx.shadowBlur=b;_celCtx.fillText(p.txt,0,0);});
+      _celCtx.fillStyle='#fff';_celCtx.shadowBlur=0;_celCtx.fillText(p.txt,0,0);
+      _celCtx.globalAlpha=1;_celCtx.restore();_celCtx.textAlign='left';
+    }
+  }
+  if(any&&_cT<1000)requestAnimationFrame(_frame);
+  else{_cOn=false;if(_celCtx)_celCtx.clearRect(0,0,_cc.width,_cc.height);}
+}
+function playCelebration(isPlayer){
+  if(!audioCtx)return;
+  var t=audioCtx.currentTime;
+  if(isPlayer){
+    [[0,523,'square'],[0,1046,'sine'],[0.06,659,'square'],[0.06,1318,'sine'],
+     [0.13,784,'square'],[0.21,1047,'square'],[0.30,1319,'square']].forEach(function(n){
+      var o=audioCtx.createOscillator(),g=audioCtx.createGain();
+      o.type=n[2];o.frequency.value=n[1];
+      g.gain.setValueAtTime(0,t+n[0]);g.gain.linearRampToValueAtTime(n[2]==='sine'?0.08:0.11,t+n[0]+0.012);
+      g.gain.exponentialRampToValueAtTime(0.001,t+n[0]+0.18);
+      o.connect(g);g.connect(audioCtx.destination);o.start(t+n[0]);o.stop(t+n[0]+0.20);
+    });
+    var sr=audioCtx.sampleRate,ln2=Math.ceil(sr*0.35),buf2=audioCtx.createBuffer(1,ln2,sr),dd=buf2.getChannelData(0);
+    for(var i=0;i<ln2;i++)dd[i]=(Math.random()*2-1)*Math.pow(1-i/ln2,0.65);
+    var ss=audioCtx.createBufferSource(),ff=audioCtx.createBiquadFilter(),gg=audioCtx.createGain();
+    ff.type='highpass';ff.frequency.value=5500;
+    gg.gain.setValueAtTime(0.28,t+0.22);gg.gain.exponentialRampToValueAtTime(0.001,t+0.55);
+    ss.buffer=buf2;ss.connect(ff);ff.connect(gg);gg.connect(audioCtx.destination);ss.start(t+0.22);
+  }else{
+    [[0,880,'sine'],[0.09,698,'triangle'],[0.18,587,'sine'],[0.28,440,'triangle'],[0.38,349,'sine']].forEach(function(n){
+      var o=audioCtx.createOscillator(),g=audioCtx.createGain();
+      o.type=n[2];o.frequency.value=n[1];
+      g.gain.setValueAtTime(0,t+n[0]);g.gain.linearRampToValueAtTime(0.10,t+n[0]+0.014);
+      g.gain.exponentialRampToValueAtTime(0.001,t+n[0]+0.16);
+      o.connect(g);g.connect(audioCtx.destination);o.start(t+n[0]);o.stop(t+n[0]+0.18);
+    });
+  }
+}
+function showCelebration(isPlayer){
+  var ov=document.getElementById('celOverlay');
+  ov.style.background=isPlayer
+    ?'radial-gradient(ellipse at 50% 36%, rgba(255,34,51,0.48) 0%, rgba(255,150,0,0.18) 45%, transparent 72%)'
+    :'radial-gradient(ellipse at 50% 36%, rgba(34,85,255,0.44) 0%, rgba(0,180,255,0.16) 45%, transparent 72%)';
+  ov.style.opacity='1';
+  setTimeout(function(){ov.style.opacity='0';},160);
+  var col3d=isPlayer?0xff3322:0x2244ff;
+  var sp=isPlayer?pPos:aPos;
+  var lights=[];
+  [[col3d,20,7,sp.x,sp.y+0.5,sp.z],[isPlayer?0xff9900:0x00aaff,13,14,0,5,0]].forEach(function(lp){
+    var fl=new THREE.PointLight(lp[0],lp[1],lp[2]);fl.position.set(lp[3],lp[4],lp[5]);scene.add(fl);lights.push(fl);
+  });
+  setTimeout(function(){lights.forEach(function(l){scene.remove(l);});},580);
+  _spawn(isPlayer);
+  playCelebration(isPlayer);
+}
+
+function playHit(p){var f=p?1.0:0.92;noiseShot(3200*f,8,'bandpass',0.9,0.001,0.018);toneShot('sine',1050*f,520*f,0.28,0.055);toneShot('triangle',380*f,190*f,0.18,0.045);}
+function playBounce(v){var vol=Math.max(0.15,Math.min(1.0,Math.abs(v)*0.22));noiseShot(4500,5,'bandpass',vol*1.1,0.0005,0.012);toneShot('sine',780,340,vol*0.35,0.045);}
+function playNet(){noiseShot(600,1.5,'lowpass',0.55,0.002,0.06);toneShot('sine',180,100,0.20,0.18);}
+function playScore(win){if(!audioCtx)return;if(win){[0,0.10,0.20,0.32].forEach(function(d,i){toneShot('sine',[880,1109,1318,1760][i],[880,1109,1318,1760][i]*0.98,0.22,0.18,audioCtx.currentTime+d);});}else{toneShot('sine',330,220,0.20,0.22);toneShot('sine',247,185,0.15,0.28,audioCtx.currentTime+0.14);}}
+
+/* ── CANVAS ── */
+var c3d=document.getElementById('c3d'),c2d=document.getElementById('c2d'),ctx=c2d.getContext('2d');
+function resizeAll(){c3d.width=c2d.width=innerWidth;c3d.height=c2d.height=innerHeight;}
+resizeAll();
+addEventListener('resize',function(){resizeAll();renderer.setSize(innerWidth,innerHeight);camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();isMobile=('ontouchstart' in window)||(navigator.maxTouchPoints>0)||(innerWidth<=900);updateCam0();});
+
+/* ── RENDERER ── */
+var renderer=new THREE.WebGLRenderer({canvas:c3d,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,isMobile?1.5:2));
+renderer.shadowMap.enabled=!isMobile;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.toneMapping=THREE.LinearToneMapping;renderer.toneMappingExposure=1.0;renderer.setSize(innerWidth,innerHeight);
+var scene=new THREE.Scene();scene.background=new THREE.Color(0x0a0a18);scene.fog=new THREE.Fog(0x0a0a18,18,44);
+var camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.01,80);
+function updateCam0(){
+  var land=innerWidth>innerHeight;
+  if(isMobile){camera.position.set(0,land?2.4:3.8,land?4.8:6.4);camera.fov=land?56:62;}
+  else{camera.position.set(0,2.8,5.2);camera.fov=50;}
+  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();camera.lookAt(0,0,0);
+}
+updateCam0();
+scene.add(new THREE.AmbientLight(0xffffff,1.8));
+var spot=new THREE.SpotLight(0xffffff,5.5,32,Math.PI/4,0.30);spot.position.set(0,8,0);spot.castShadow=!isMobile;
+if(!isMobile)spot.shadow.mapSize.width=spot.shadow.mapSize.height=2048;
+scene.add(spot);
+if(!isMobile)[[-6,4,-6],[6,4,-6],[-6,4,6],[6,4,6]].forEach(function(p){var l=new THREE.PointLight(0xffffff,2.0,20);l.position.set(p[0],p[1],p[2]);scene.add(l);});
+var lB=new THREE.PointLight(0x2255ff,2.5,18);lB.position.set(-4,3,-4);scene.add(lB);
+var lR=new THREE.PointLight(0xff2233,2.2,18);lR.position.set(4,3,4);scene.add(lR);
+
+/* ── CONSTANTS ── */
+var TW=2.74,TL=4.8,HW=TW/2,HL=TL/2,NET_H=0.18,BR=0.038;
+var GRAV=-16.0,REST=0.78,SPIN_CURVE=0.65;
+var SERVE_VY=4.0,SERVE_VZ=6.5,HIT_VZ_MIN=6.5,HIT_VZ_VAR=1.6,HIT_VY=3.8;
+var HIT_R_DESKTOP=0.95,HIT_D_DESKTOP=1.20,HIT_R_MOBILE=1.10,HIT_D_MOBILE=1.55;
+var HIT_R=HIT_R_DESKTOP,HIT_D=HIT_D_DESKTOP;
+var batNX=0,batNY=0,batNZ=-1;
+var batAngVX=0,batAngVZ=0;
+var lastHitQuality=1.0;
+var batTiltX=0,batTiltZ=0;
+
+var AI_Z_HOME  = -3.20;
+var AI_Z_FRONT = -3.20;
+
+/* ── DIFFICULTY SETTINGS ──
+ * missRate: probability CPU will intentionally miss a shot per rally
+ * missRallyBoost: extra miss chance added per rally stroke (CPU "tires")
+ * maxMissRate: cap on total miss probability
+ */
+var DIFFS={
+  easy:  {spd:11.0,err:0.10,steps:500,missRate:0.06,missRallyBoost:0.008,maxMissRate:0.18,shotErr:0.4},
+  medium:{spd:15.0,err:0.03,steps:600,missRate:0.03,missRallyBoost:0.004,maxMissRate:0.10,shotErr:0.15},
+  hard:  {spd:21.0,err:0.00,steps:700,missRate:0.01,missRallyBoost:0.001,maxMissRate:0.04,shotErr:0.0}
+};
+var WIN=11;
+
+/* ── TABLE ── */
+var tblMat=new THREE.MeshBasicMaterial({color:0x1a7a2a});
+var tblMesh=new THREE.Mesh(new THREE.BoxGeometry(TW,0.06,TL),tblMat);
+tblMesh.position.y=-0.030;tblMesh.receiveShadow=true;scene.add(tblMesh);
+var frameMat=new THREE.MeshStandardMaterial({color:0x2a1a0a,roughness:0.6});
+[-1,1].forEach(function(s){var p=new THREE.Mesh(new THREE.BoxGeometry(0.04,0.12,TL+0.04),frameMat);p.position.set(s*(HW+0.02),-0.09,0);scene.add(p);});
+[-HL-0.01,HL+0.01].forEach(function(z){var e=new THREE.Mesh(new THREE.BoxGeometry(TW+0.08,0.12,0.04),frameMat);e.position.set(0,-0.09,z);scene.add(e);});
+(function(){
+  function ln(pts,op){var a=[];for(var i=0;i<pts.length;i++)a.push(pts[i][0],pts[i][1],pts[i][2]);var g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(a),3));scene.add(new THREE.Line(g,new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:op||0.95})));}
+  var y=0.002;ln([[-HW,y,-HL],[HW,y,-HL],[HW,y,HL],[-HW,y,HL],[-HW,y,-HL]]);ln([[0,y,-HL],[0,y,HL]],0.4);ln([[-HW,y,0],[HW,y,0]]);
+})();
+var legMat=new THREE.MeshStandardMaterial({color:0x777777,metalness:0.6,roughness:0.4});
+[[-1,-1],[1,-1],[1,1],[-1,1]].forEach(function(s){
+  var l=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.78,0.06),legMat);l.position.set(s[0]*HW*0.88,-0.42,s[1]*HL*0.88);scene.add(l);
+  var f=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.02,0.12),legMat);f.position.set(s[0]*HW*0.88,-0.81,s[1]*HL*0.88);scene.add(f);
+});
+
+/* ── NET ── */
+(function(){
+  var nW=TW+0.30, nH=NET_H;
+  var thread=new THREE.MeshBasicMaterial({color:0xffffff});
+  for(var h=0;h<=12;h++){var hy=nH*(h/12);var hm=new THREE.Mesh(new THREE.BoxGeometry(nW,0.004,0.004),thread);hm.position.set(0,hy,0);scene.add(hm);}
+  for(var v=0;v<=36;v++){var vx=-nW/2+(v/36)*nW;var vm=new THREE.Mesh(new THREE.BoxGeometry(0.004,nH,0.004),thread);vm.position.set(vx,nH/2,0);scene.add(vm);}
+  var tape=new THREE.Mesh(new THREE.BoxGeometry(nW+0.02,0.034,0.050),new THREE.MeshBasicMaterial({color:0xffffff}));tape.position.set(0,nH+0.017,0);scene.add(tape);
+  var postMat=new THREE.MeshStandardMaterial({color:0xcccccc,roughness:0.15,metalness:0.95});
+  var baseMat=new THREE.MeshStandardMaterial({color:0x111111,roughness:0.40,metalness:0.80});
+  [-nW/2,nW/2].forEach(function(px){
+    var shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.016,0.018,nH+0.070,16),postMat);shaft.position.set(px,(nH+0.070)/2,0);scene.add(shaft);
+    var cap=new THREE.Mesh(new THREE.SphereGeometry(0.018,12,8),postMat);cap.position.set(px,nH+0.070,0);scene.add(cap);
+    var base=new THREE.Mesh(new THREE.BoxGeometry(0.065,0.038,0.075),baseMat);base.position.set(px,-0.019,0);scene.add(base);
+  });
+})();
+
+/* ── BALL ── */
+var ballMesh=new THREE.Mesh(new THREE.SphereGeometry(BR,32,32),new THREE.MeshStandardMaterial({color:0xff8000,roughness:0.05,emissive:0xff4400,emissiveIntensity:0.45}));
+ballMesh.castShadow=true;scene.add(ballMesh);
+var bSQ=1.0,bSQx=1.0;
+var bShadMat=new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.45,depthWrite:false});
+var bShadow=new THREE.Mesh(new THREE.CircleGeometry(BR*2.8,22),bShadMat);
+bShadow.rotation.x=-Math.PI/2;bShadow.position.y=0.001;scene.add(bShadow);
+var TRL=32,trailGeo=new THREE.BufferGeometry();
+trailGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(TRL*3),3));
+var trailMat=new THREE.LineBasicMaterial({color:0xff8800,transparent:true,opacity:0});
+scene.add(new THREE.Line(trailGeo,trailMat));
+var trailPts=[];
+
+/* ── SPIN VISUALISER ── */
+/* Three arc-rings that orbit the ball showing spin axis + intensity */
+var spinRings=[];
+(function(){
+  var ringSegs=48;
+  /* Ring 0: topspin/backspin indicator (rotates around X axis) */
+  /* Ring 1: sidespin indicator (rotates around Z axis) */
+  /* Ring 2: combo ring (tilted 45°) */
+  var ringColors=[0xff3333,0x3399ff,0xffcc00];
+  var ringTilts=[[1,0,0],[0,0,1],[0.707,0,0.707]];
+  for(var ri=0;ri<3;ri++){
+    var pts=[];
+    for(var i=0;i<=ringSegs;i++){
+      var a=(i/ringSegs)*Math.PI*2;
+      pts.push(Math.cos(a)*BR*1.55, Math.sin(a)*BR*1.55, 0);
+    }
+    var rg=new THREE.BufferGeometry();
+    rg.setAttribute('position',new THREE.BufferAttribute(new Float32Array(pts),3));
+    var rm=new THREE.LineBasicMaterial({color:ringColors[ri],transparent:true,opacity:0,depthWrite:false,depthTest:false});
+    var rl=new THREE.Line(rg,rm);
+    /* Tilt each ring to its axis */
+    if(ri===0) rl.rotation.z=Math.PI/2;
+    if(ri===2){rl.rotation.x=Math.PI/4;rl.rotation.y=Math.PI/4;}
+    scene.add(rl);
+    spinRings.push(rl);
+  }
+})();
+
+/* Arrow disc — flat circle that shows the spin direction as a glowing disc */
+var spinDiscMat=new THREE.MeshBasicMaterial({color:0xffffff,transparent:true,opacity:0,depthWrite:false,side:2});
+var spinDisc=new THREE.Mesh(new THREE.CircleGeometry(BR*1.3,32),spinDiscMat);
+scene.add(spinDisc);
+
+/* ── FLOOR ── */
+var floorM=new THREE.Mesh(new THREE.PlaneGeometry(50,50),new THREE.MeshStandardMaterial({color:0x151525,roughness:0.45,metalness:0.35}));
+floorM.rotation.x=-Math.PI/2;floorM.position.y=-0.82;floorM.receiveShadow=true;scene.add(floorM);
+if(!isMobile){
+  (function(){var gs=12,step=0.6,gm=new THREE.LineBasicMaterial({color:0x223366,transparent:true,opacity:0.30});
+    for(var xi=-gs;xi<=gs;xi++){var gx=new THREE.BufferGeometry();gx.setAttribute('position',new THREE.BufferAttribute(new Float32Array([xi*step,-0.819,-gs*step,xi*step,-0.819,gs*step]),3));scene.add(new THREE.Line(gx,gm));}
+    for(var zi=-gs;zi<=gs;zi++){var gz=new THREE.BufferGeometry();gz.setAttribute('position',new THREE.BufferAttribute(new Float32Array([-gs*step,-0.819,zi*step,gs*step,-0.819,zi*step]),3));scene.add(new THREE.Line(gz,gm));}
+  })();
+  for(var pi=0;pi<8;pi++){var pAng=(pi/8)*Math.PI*2;
+    var pillar=new THREE.Mesh(new THREE.BoxGeometry(0.18,3.5,0.18),new THREE.MeshStandardMaterial({color:0x222233,roughness:0.4,metalness:0.5}));
+    pillar.position.set(Math.cos(pAng)*9.5,0.5,Math.sin(pAng)*9.5);scene.add(pillar);
+    var pLamp=new THREE.PointLight(new THREE.Color().setHSL(pi/8,1,0.5),1.5,8);pLamp.position.set(Math.cos(pAng)*9.5,2.2,Math.sin(pAng)*9.5);scene.add(pLamp);
+  }
+}
+
+/* ── PADDLE DRAW ── */
+function drawPaddle(sx,sy,tiltZ,tiltX,R,isPlayer,oX,oY){
+  var S=R,BRX=S*1.04,BRY=S*1.10,EB=S*0.095,HW2=S*0.22,HL2=S*1.05,HR=S*0.10;
+  var joinY=BRY*Math.sqrt(Math.max(0,1-(HW2/BRX)*(HW2/BRX)));
+  ctx.save();ctx.translate(sx+(oX||0),sy+(oY||0));ctx.rotate(tiltZ);
+  function traceHandle(){var t=joinY,b=joinY+HL2;ctx.moveTo(HW2,t);ctx.lineTo(HW2,b-HR);ctx.quadraticCurveTo(HW2,b,HW2-HR,b);ctx.lineTo(-HW2+HR,b);ctx.quadraticCurveTo(-HW2,b,-HW2,b-HR);ctx.lineTo(-HW2,t);ctx.closePath();}
+  function traceFull(brx,bry,hw,hl){var jy=bry*Math.sqrt(Math.max(0,1-(hw/brx)*(hw/brx))),b=jy+hl,a1=Math.atan2(jy/bry,-hw/brx),a2=Math.atan2(jy/bry,hw/brx);ctx.moveTo(hw,jy);ctx.lineTo(hw,b-HR);ctx.quadraticCurveTo(hw,b,hw-HR,b);ctx.lineTo(-hw+HR,b);ctx.quadraticCurveTo(-hw,b,-hw,b-HR);ctx.lineTo(-hw,jy);ctx.ellipse(0,0,brx,bry,0,a1,a2,true);ctx.closePath();}
+  ctx.shadowColor='rgba(0,0,0,0.45)';ctx.shadowBlur=16;ctx.shadowOffsetX=3;ctx.shadowOffsetY=7;
+  ctx.beginPath();traceFull(BRX,BRY,HW2,HL2);ctx.fillStyle='rgba(0,0,0,0.01)';ctx.fill();ctx.shadowColor='transparent';
+  ctx.beginPath();traceHandle();
+  var hg=ctx.createLinearGradient(-HW2,joinY,HW2,joinY+HL2);hg.addColorStop(0,'#3c1804');hg.addColorStop(0.15,'#904010');hg.addColorStop(0.5,'#c8702a');hg.addColorStop(0.85,'#904010');hg.addColorStop(1,'#3c1804');
+  ctx.fillStyle=hg;ctx.fill();
+  ctx.save();ctx.beginPath();traceHandle();ctx.clip();for(var gi=-4;gi<=4;gi++){ctx.beginPath();ctx.moveTo(gi*HW2*0.26,joinY);ctx.lineTo(gi*HW2*0.26*0.94,joinY+HL2);ctx.strokeStyle=gi%2===0?'rgba(25,8,1,0.16)':'rgba(200,140,50,0.09)';ctx.lineWidth=0.55;ctx.stroke();}ctx.restore();
+  ctx.beginPath();ctx.ellipse(0,0,BRX,BRY,0,0,Math.PI*2);ctx.fillStyle='#1a0a02';ctx.fill();
+  ctx.save();ctx.beginPath();ctx.ellipse(0,0,BRX,BRY,0,0,Math.PI*2);ctx.clip();ctx.beginPath();ctx.ellipse(0,0,BRX,BRY,0,0,Math.PI*2);ctx.strokeStyle=isPlayer?'#8b0010':'#0a0c20';ctx.lineWidth=EB*2.3;ctx.stroke();ctx.restore();
+  var rX=BRX-EB,rY=BRY-EB;ctx.beginPath();ctx.ellipse(0,0,rX,rY,0,0,Math.PI*2);ctx.fillStyle=isPlayer?'#d01428':'#131e34';ctx.fill();
+  ctx.save();ctx.beginPath();ctx.ellipse(0,0,rX,rY,0,0,Math.PI*2);ctx.clip();
+  var rg=ctx.createRadialGradient(-rX*0.20,-rY*0.32,0,rX*0.08,rY*0.08,rX*1.25);
+  if(isPlayer){rg.addColorStop(0,'rgba(255,90,100,0.58)');rg.addColorStop(0.5,'rgba(195,12,22,0.12)');rg.addColorStop(1,'rgba(55,0,6,0.52)');}
+  else{rg.addColorStop(0,'rgba(70,110,240,0.52)');rg.addColorStop(0.5,'rgba(12,20,100,0.12)');rg.addColorStop(1,'rgba(0,0,44,0.52)');}
+  ctx.fillStyle=rg;ctx.fill();
+  var dp=S*0.108,dr=S*0.021;for(var dy=-rY;dy<rY;dy+=dp){var ro=(Math.round((dy+rY)/dp)%2===0)?0:dp*0.5;for(var dx=-rX;dx<rX;dx+=dp){ctx.beginPath();ctx.arc(dx+ro,dy,dr,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,0.07)';ctx.fill();}}
+  var gl=ctx.createRadialGradient(-rX*0.28,-rY*0.42,0,-rX*0.06,-rY*0.15,rX*0.72);gl.addColorStop(0,'rgba(255,255,255,0.35)');gl.addColorStop(0.4,'rgba(255,255,255,0.08)');gl.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=gl;ctx.fill();ctx.restore();
+  ctx.beginPath();ctx.ellipse(0,0,BRX,BRY,0,0,Math.PI*2);ctx.strokeStyle='rgba(0,0,0,0.38)';ctx.lineWidth=S*0.018;ctx.stroke();ctx.restore();
+}
+
+/* ── GAME STATE ── */
+var diff='easy',gstate='menu';
+var pScore=0,aScore=0,server='player',srvCnt=0,locked=false;
+var bx=0,by=0.3,bz=0,bvx=0,bvy=0,bvz=0,bsx=0,bsz=0;
+var bLive=false,bWait=true,hitter=null,bounces=0,bounceOwner=null,hitCD=false;
+var spin=0,mdown=false,padVX=0;
+var mNX=0,mNY=0;
+var pPadX=0,pPadY=0,pPadR=40,aPadX=0,aPadY=0,aPadR=40;
+var pPadTiltZ=0,pPadTiltX=0,aPadTiltZ=0,aPadTiltX=0;
+var pPadOX=0,pPadOY=0,aPadOX=0,aPadOY=0;
+var pSwing=0,aSwing=0;
+var aiIdleT=0;  /* time accumulator for AI idle sway animation */
+var pPos={x:0,y:0.14,z:HL*0.5};
+var aPos={x:0,y:0.14,z:AI_Z_HOME};
+var aTX=0;          /* legacy — kept for any refs; real tracking uses aTX_raw */
+var smoothPVX=0,smoothPVZ=0,smoothAVX=0,smoothAVZ=0;
+
+/* ── MOBILE BAT ── */
+var TOUCH_Y_OFFSET=-44,BAT_MAGNET=0.75;
+var activeBatTouchId=null,activeBatTouchX=innerWidth/2,activeBatTouchY=innerHeight/2;
+var batTouchVX=0,batTouchVY=0,lastBatTouchTime=0;
+var predictedLandX=null,showAssist=false;
+var batRing=document.getElementById('bat-touch-ring');
+function setBatRingPos(x,y,hitting){batRing.style.left=x+'px';batRing.style.top=(y+TOUCH_Y_OFFSET)+'px';batRing.classList.toggle('hitting',!!hitting);batRing.classList.add('active');}
+var mobileSpinTouchId=null;
+function getTouchForBat(e){
+  for(var i=0;i<e.touches.length;i++){
+    var tt=e.touches[i];if(tt.identifier===mobileSpinTouchId)continue;
+    var ctrl=document.getElementById('mobile-controls'),rect=ctrl?ctrl.getBoundingClientRect():null;
+    if(rect&&tt.clientY>=rect.top-10)continue;return tt;
+  }return null;
+}
+c3d.addEventListener('touchstart',function(e){
+  e.preventDefault();initAudio();var tt=getTouchForBat(e);
+  if(tt){activeBatTouchId=tt.identifier;activeBatTouchX=tt.clientX;activeBatTouchY=tt.clientY;lastBatTouchTime=performance.now();batTouchVX=0;batTouchVY=0;mNX=(tt.clientX/innerWidth)*2-1;mNY=(tt.clientY/innerHeight)*2-1;setBatRingPos(tt.clientX,tt.clientY,false);if(gstate==='play'&&bWait&&server==='player')doServe('player');}
+},{passive:false});
+c3d.addEventListener('touchmove',function(e){
+  e.preventDefault();var tt=null;for(var i=0;i<e.touches.length;i++){if(e.touches[i].identifier===activeBatTouchId){tt=e.touches[i];break;}}
+  if(!tt)tt=getTouchForBat(e);if(!tt)return;
+  var now=performance.now(),dt2=Math.max(1,now-lastBatTouchTime)/1000;
+  batTouchVX=(tt.clientX-activeBatTouchX)/dt2;batTouchVY=(tt.clientY-activeBatTouchY)/dt2;
+  activeBatTouchX=tt.clientX;activeBatTouchY=tt.clientY;lastBatTouchTime=now;
+  mNX=(tt.clientX/innerWidth)*2-1;mNY=(tt.clientY/innerHeight)*2-1;setBatRingPos(tt.clientX,tt.clientY,false);
+},{passive:false});
+c3d.addEventListener('touchend',function(e){
+  var still=false;for(var i=0;i<e.touches.length;i++){if(e.touches[i].identifier===activeBatTouchId){still=true;break;}}
+  if(!still){activeBatTouchId=null;batRing.classList.remove('active');batTouchVX=0;batTouchVY=0;}
+},{passive:false});
+
+addEventListener('mousemove',function(e){mNX=(e.clientX/innerWidth)*2-1;mNY=(e.clientY/innerHeight)*2-1;});
+addEventListener('mousedown',function(e){initAudio();if(e.button!==0)return;mdown=true;if(gstate==='play'&&bWait&&server==='player')doServe('player');});
+addEventListener('mouseup',function(e){if(e.button!==0)return;mdown=false;});
+addEventListener('contextmenu',function(e){e.preventDefault();});
+
+function mobileServe(e){if(e)e.preventDefault();if(gstate==='play'&&bWait&&server==='player'){initAudio();doServe('player');}}
+function mobileSpinStart(e){e.preventDefault();if(e.touches&&e.touches.length>0)mobileSpinTouchId=e.touches[0].identifier;mdown=true;document.getElementById('btn-spin').classList.add('pressed');}
+function mobileSpinEnd(e){e.preventDefault();mobileSpinTouchId=null;mdown=false;document.getElementById('btn-spin').classList.remove('pressed');}
+function updateServeBtn(){var b=document.getElementById('btn-serve');if(b)b.classList.toggle('hidden',!(gstate==='play'&&bWait&&server==='player'));}
+
+/* ── HELPERS ── */
+function worldToScreen(wx,wy,wz){var v=new THREE.Vector3(wx,wy,wz);v.project(camera);return{x:(v.x*0.5+0.5)*innerWidth,y:(-v.y*0.5+0.5)*innerHeight};}
+function worldRadius(wx,wy,wz,r3d){var c=worldToScreen(wx,wy,wz),e=worldToScreen(wx+r3d,wy,wz);return Math.abs(e.x-c.x);}
+var _rO=new THREE.Vector3(),_rD=new THREE.Vector3(),_rPlane=new THREE.Plane(new THREE.Vector3(0,1,0),-0.14),_rT=new THREE.Vector3();
+function mouseToWorld(){
+  var ny=-mNY;_rO.set(mNX,ny,-1).unproject(camera);_rD.set(mNX,ny,1).unproject(camera).sub(_rO).normalize();
+  var den=_rPlane.normal.dot(_rD);if(Math.abs(den)<1e-6)return null;
+  var t=-(_rPlane.normal.dot(_rO)+_rPlane.constant)/den;if(t<0)return null;
+  _rT.copy(_rO).addScaledVector(_rD,t);return{x:_rT.x,z:_rT.z};
+}
+function clamp(v,lo,hi){return v<lo?lo:v>hi?hi:v;}
+function landingX(sx,vx,vy,y0){var disc=vy*vy+2*Math.abs(GRAV)*(y0-BR);if(disc<0)return sx;return sx+vx*(vy+Math.sqrt(disc))/Math.abs(GRAV);}
+
+/* ── PHYSICS ──
+ * FIX 2: Fixed-timestep accumulator for stable physics.
+ * Physics always steps at exactly PHYS_STEP seconds regardless of render FPS.
+ * This prevents ball speed variation when tab loses focus or frame rate drops.
+ */
+var PHYS_STEP = 1/120;    /* physics runs at 120Hz fixed rate */
+var physAccum = 0;        /* accumulated time not yet consumed by physics */
+var MAX_PHYS_CATCH = 6;   /* max physics steps per render frame (prevents spiral of death) */
+
+var lastBounceHalf=null;
+var bounceCount=0;
+var pointPending=false;
+
+function awardPoint(winner,msg,delay){
+  if(pointPending||gstate!=='play')return;
+  pointPending=true;bLive=false;
+  if(msg)showToast(msg);
+  var w=winner;
+  setTimeout(function(){scorePoint(w);},delay||200);
+}
+
+/* One fixed physics sub-step — called repeatedly from main loop */
+function physicsStep(){
+  if(!bLive)return;
+  var sub=PHYS_STEP;
+
+  bvy+=GRAV*sub;
+  /* Magnus: spin deflects flight path */
+  bvx+=bsz*sub*SPIN_CURVE;
+  bvz+=bsx*sub*SPIN_CURVE;
+  bsx*=0.990;bsz*=0.990;
+
+  var oldBz=bz;
+  bx+=bvx*sub;by+=bvy*sub;bz+=bvz*sub;
+
+  /* ── TABLE BOUNCE ── */
+  if(by<=BR){
+    if(Math.abs(bx)<=HW&&Math.abs(bz)<=HL){
+      by=BR;
+      var spd=Math.abs(bvy);
+      bvy=Math.max(spd*REST,0.5);
+      /* Spin-to-velocity on bounce */
+      bvx+=bsz*0.32;bvz+=bsx*0.32;
+      bsx*=0.65;bsz*=0.65;
+      doRipple();flashTable();bSQ=0.62;bSQx=1.22;playBounce(spd);
+      var half=(bz>0)?'player':'ai';
+      if(half===lastBounceHalf){
+        bounceCount++;
+        if(bounceCount>=2){awardPoint(half==='player'?'ai':'player',half==='player'?null:'Point!',80);return;}
+      }else{lastBounceHalf=half;bounceCount=1;}
+    }else{
+      if(by<-1.5){awardPoint(hitter==='player'?'ai':'player',null,60);return;}
+    }
+  }
+
+  /* ── NET COLLISION ── */
+  var crossed=(oldBz>0&&bz<0)||(oldBz<0&&bz>0);
+  if(crossed&&Math.abs(bx)<=HW+0.05){
+    var dzt=Math.abs(oldBz-bz);
+    var tc=dzt>1e-9?Math.abs(oldBz)/dzt:0.5;
+    var crossY=(by-bvy*sub)+bvy*sub*tc;
+    if(crossY-BR<NET_H){playNet();awardPoint(hitter==='player'?'ai':'player','Net!',280);return;}
+  }
+
+  /* ── OUT OF BOUNDS ── */
+  if(Math.abs(bx)>HW+2.5||Math.abs(bz)>HL+1.4||by<-4.0){
+    bLive=false;
+    var scorer;
+    if(bz>HL)scorer='ai';
+    else if(bz<-HL)scorer='player';
+    else scorer=(hitter==='player')?'ai':'player';
+    awardPoint(scorer,null,60);return;
+  }
+}
+
+/* ── AI PREDICT ── */
+function predictAt(tz,maxS){
+  var px=bx,py=by,pz=bz,pvx=bvx,pvy=bvy,pvz=bvz;
+  var sub=1/600;
+  var totalSteps=maxS*3;
+  for(var si=0;si<totalSteps;si++){
+    pvy+=GRAV*sub;px+=pvx*sub;py+=pvy*sub;pz+=pvz*sub;
+    if(py<=BR&&Math.abs(px)<=HW&&Math.abs(pz)<=HL){py=BR;pvy=Math.abs(pvy)*REST;if(pvy<0.4)pvy=0.4;}
+    if(pz<=tz){return{x:clamp(px,-HW,HW),y:clamp(py,BR,0.6)};}
+    if(pz>HL+0.5)return null;
+  }
+  return null;
+}
+function predictPlayerLanding(){
+  var px=bx,py=by,pz=bz,pvx=bvx,pvy=bvy,pvz=bvz,psx=bsx,psz=bsz,sub=1/500,tZ=pPos.z;
+  for(var si=0;si<600;si++){
+    pvy+=GRAV*sub;pvx+=psz*sub*SPIN_CURVE;pvz+=psx*sub*SPIN_CURVE;psx*=0.992;psz*=0.992;
+    px+=pvx*sub;py+=pvy*sub;pz+=pvz*sub;
+    if(py<=BR&&Math.abs(px)<=HW&&Math.abs(pz)<=HL){py=BR;pvy=Math.max(Math.abs(pvy)*REST,0.5);}
+    if(pvz>=0&&pz>=tZ)return{x:px,y:Math.max(py,BR+0.02)};
+  }return null;
+}
+
+/* ── PLAYER UPDATE ── */
+/* ── ZONE CONSTANTS ─────────────────────────────────────────────────
+ * Net is at z=0. Net projects to exactly 50% screenY on all devices.
+ * A bat at z=0.20 projects to ~49.5% (ABOVE the 50% net line visually).
+ * We need z >= 0.60 so the bat always projects to > 50% on all devices.
+ * OPP mirror: aPos.z <= -0.60 always projects < 50% (above net = far side).
+ * ──────────────────────────────────────────────────────────────────*/
+var P_ZONE_Z_MIN   = 0.60;
+var P_ZONE_Z_MAX   = HL + 1.8;
+var ONLINE_Z_MIN   = P_ZONE_Z_MIN;
+var OPP_Z_MAX      = -P_ZONE_Z_MIN;
+var OPP_Z_MIN      = -P_ZONE_Z_MAX;
+var P_ZONE_X_MAX   = HW + 1.4;
+var P_ZONE_X_MAX_M = HW + 2.0;
+var batAngleZ=0,batAngleX=0,prevMNX=0,prevMNY=0;
+
+function updatePlayer(dt){
+  HIT_R = isMobile ? HIT_R_MOBILE : HIT_R_DESKTOP;
+  HIT_D = isMobile ? HIT_D_MOBILE : HIT_D_DESKTOP;
+
+  /* Use mouseToWorld() — same as CPU/offline mode */
+  var hit = mouseToWorld(), tX, tZ;
+  if(hit){ tX=hit.x; tZ=hit.z; }
+  else   { tX=pPos.x; tZ=pPos.z; }
+
+  var xMax = isMobile ? P_ZONE_X_MAX_M : P_ZONE_X_MAX;
+  tX = clamp(tX, -xMax, xMax);
+  tZ = clamp(tZ, P_ZONE_Z_MIN, P_ZONE_Z_MAX);
+
+  var oldX = pPos.x, oldZ = pPos.z;
+  var spd  = isMobile ? clamp(72*dt, 0, 1) : 1.0;
+  pPos.x  += (tX - pPos.x) * spd;
+  pPos.z  += (tZ - pPos.z) * spd;
+  pPos.y   = 0.14;
+  pPos.x = clamp(pPos.x, -xMax, xMax);
+  pPos.z = clamp(pPos.z, P_ZONE_Z_MIN, P_ZONE_Z_MAX);
+
+  var rawVX = (pPos.x - oldX) / Math.max(dt, 0.001);
+  var rawVZ = (pPos.z - oldZ) / Math.max(dt, 0.001);
+  padVX = rawVX;
+  var tsf=1.0;
+  if(isMobile&&activeBatTouchId!==null){
+    var sm=Math.sqrt(batTouchVX*batTouchVX+batTouchVY*batTouchVY);
+    tsf=1.0+clamp(sm/1800,0,0.7);padVX=batTouchVX*0.003;
+  }
+  window._tsf=tsf;
+  var vs=clamp(32*dt,0,1);smoothPVX+=(rawVX-smoothPVX)*vs;smoothPVZ+=(rawVZ-smoothPVZ)*vs;
+  var TILT_SENS=5.5,TILT_SPRING=5.8,TILT_MAX=1.05;
+  var dMX=mNX-prevMNX,dMY=mNY-prevMNY;prevMNX=mNX;prevMNY=mNY;
+  if(isMobile&&activeBatTouchId!==null){dMX=(batTouchVX/innerWidth)*2*dt*55;dMY=(batTouchVY/innerHeight)*2*dt*55;}
+  batAngleZ+=dMX*TILT_SENS;batAngleX-=dMY*TILT_SENS;
+  batAngleZ=clamp(batAngleZ,-TILT_MAX,TILT_MAX);batAngleX=clamp(batAngleX,-TILT_MAX,TILT_MAX);
+  batAngleZ-=batAngleZ*clamp(TILT_SPRING*dt,0,0.85);batAngleX-=batAngleX*clamp(TILT_SPRING*dt,0,0.85);
+  var lerpRate=clamp(28.0*dt,0,1);
+  var targetZ=batAngleZ+clamp(smoothPVX*0.14,-0.30,0.30);
+  var targetX=batAngleX+clamp(-smoothPVZ*0.10,-0.25,0.25);
+  pSwing=Math.max(0,pSwing-dt*5.0);targetX+=pSwing*0.4;
+  pPadTiltZ+=(targetZ-pPadTiltZ)*lerpRate;pPadTiltX+=(targetX-pPadTiltX)*lerpRate;
+  batTiltX=pPadTiltX;batTiltZ=pPadTiltZ;
+  var tOX=clamp(-smoothPVX*9.0,-48,48);var tOY=clamp(smoothPVZ*8.0,-36,36)+pSwing*(-22);
+  var os=clamp(26*dt,0,1);pPadOX+=(tOX-pPadOX)*os;pPadOY+=(tOY-pPadOY)*os;
+  spin=mdown?Math.min(spin+dt*1.8,1.0):Math.max(spin-dt*3.5,0.0);
+  var sl=['—','LIGHT','MED','HEAVY'][Math.floor(spin*3.99)];
+  document.getElementById('spinbar').style.width=(spin*100)+'%';document.getElementById('spintype').textContent=sl;
+  document.getElementById('m-spinbar').style.width=(spin*100)+'%';document.getElementById('m-spintype').textContent=sl;
+  if(isMobile&&activeBatTouchId!==null){
+    var pdx=bx-pPos.x,pdy=by-pPos.y;
+    setBatRingPos(activeBatTouchX,activeBatTouchY,Math.sqrt(pdx*pdx+pdy*pdy)<HIT_R*1.3&&bvz>0);
+  }
+  if(isMobile&&bLive&&bvz>0){var pr=predictPlayerLanding();if(pr){predictedLandX=pr.x;showAssist=true;}else showAssist=false;}
+  else showAssist=false;
+}
+
+/* ── AI UPDATE ──
+ * FIX 1: CPU miss system.
+ * Each rally the CPU may decide to "miss" (probabilistically).
+ * Miss chance increases with rally length to simulate fatigue.
+ * When missing, CPU deliberately moves to a wrong X position.
+ * Three miss types: (A) off-table wide, (B) into net (short), (C) off end
+ */
+var aiReactTimer=0,aiMissOffset=0,aiWillMiss=false,rallyCount=0;
+var aiTargetY=0.14;
+var aiMissDecided=false;  /* whether miss decision is made for this rally */
+var aiMissType=0;         /* 0=wide left, 1=wide right, 2=short (net), 3=long */
+
+/* ── AI smooth target trackers ─────────────────────────────────────────
+ * aTX_raw  : desired X computed from prediction each frame (may flicker)
+ * aTX      : smoothed version of aTX_raw — bat tracks this, never jumps
+ * aiTargetY: desired Y, also smoothed toward final value
+ * All miss offsets are baked in at decision time and held fixed,
+ * never re-randomised mid-flight, so there are no sudden lurches.
+ * ──────────────────────────────────────────────────────────────────── */
+var aTX_raw = 0;   /* raw desired X, updated every frame */
+
+function updateAI(dt){
+  var d=DIFFS[diff];
+  var prevAX=aPos.x;
+  var prevAY=aPos.y;
+
+  if(!bLive||bvz>=0){
+    /* ── Ball not incoming: glide back to centre with gentle idle sway ── */
+    aiReactTimer=0;
+    aTX_raw += (0 - aTX_raw) * clamp(8.0*dt,0,1);
+    aiTargetY += (0.14 - aiTargetY) * clamp(8.0*dt,0,1);
+    aPos.z=AI_Z_HOME;
+    if(!bLive) aiMissDecided=false;
+
+  }else{
+    /* ── Ball incoming ── */
+    aiReactTimer+=dt;
+
+    /* Decide miss ONCE per incoming ball — fixed offsets, no re-roll */
+    if(!aiMissDecided){
+      aiMissDecided=true;
+      var effectiveMissRate=Math.min(
+        d.missRate + rallyCount*d.missRallyBoost,
+        d.maxMissRate
+      );
+      aiWillMiss=(Math.random()<effectiveMissRate);
+      if(aiWillMiss){
+        aiMissType=Math.floor(Math.random()*4);
+        /* Fixed offset decided once — will not change until next ball */
+        aiMissOffset=(Math.random()*0.7+0.5)*(Math.random()<0.5?1:-1)*HW;
+      }
+    }
+
+    var pred=predictAt(AI_Z_HOME,d.steps);
+    var destX, destY;
+    if(pred){
+      if(aiWillMiss){
+        if(aiMissType===0){
+          destX=pred.x+aiMissOffset;
+          destY=clamp(pred.y,BR+0.01,0.58);
+        }else if(aiMissType===1){
+          /* Y miss — fixed offset, not re-randomised each frame */
+          destX=pred.x;
+          destY=clamp(pred.y+(aiMissOffset>0?0.32:-0.26),0.04,0.58);
+        }else if(aiMissType===2){
+          destX=pred.x;
+          destY=Math.max(BR+0.01,pred.y-0.25);
+        }else{
+          /* Overshoot X — fixed wrong side */
+          destX=clamp(-pred.x*Math.abs(aiMissOffset)/HW*0.9,-HW*1.3,HW*1.3);
+          destY=clamp(pred.y,BR+0.01,0.58);
+        }
+      }else{
+        destX=pred.x;
+        destY=clamp(pred.y,BR+0.01,0.58);
+      }
+    }else{
+      /* No prediction yet — track ball X directly */
+      destX=bx;
+      destY=clamp(by,BR+0.01,0.58);
+    }
+
+    /* Smooth raw target — prevents flicker when prediction hops between frames */
+    aTX_raw += (destX - aTX_raw) * clamp(14.0*dt,0,1);
+    aiTargetY += (destY - aiTargetY) * clamp(14.0*dt,0,1);
+    aPos.z=AI_Z_HOME;
+  }
+
+  /* ── X movement: smooth eased glide instead of hard step-snap ──
+   * Uses exponential approach rather than fixed-step so there is
+   * never a "teleport" snap when the bat arrives at target.         */
+  aTX_raw=clamp(aTX_raw,-HW*1.4,HW*1.4);
+  var xErr=aTX_raw-aPos.x;
+  /* Max speed still respects difficulty, but motion is always eased */
+  var xMaxMove=d.spd*dt;
+  var xMove=xErr*clamp(18.0*dt,0,1);          /* exponential ease   */
+  if(Math.abs(xMove)>xMaxMove) xMove=(xErr>0?1:-1)*xMaxMove; /* cap */
+  aPos.x+=xMove;
+
+  /* ── Y movement: smooth lerp — no instant jump ── */
+  var yTarget=clamp(aiTargetY,0.04,0.58);
+  aPos.y+=( yTarget - aPos.y )*clamp(16.0*dt,0,1);
+  aPos.z=AI_Z_HOME;
+
+  /* ── AI bat animation — 6-layer expressive lying/tilt system ───────────
+   *
+   * Layer 1 — LATERAL LEAN      : tilts hard with X velocity
+   * Layer 2 — BALL-CHASE REACH  : leans toward ball offset + pitches fwd
+   * Layer 3 — STRIKE SWING      : full forward pitch + side snap on hit
+   * Layer 4 — IDLE SWAY         : dual-frequency organic rocking at rest
+   * Layer 5 — SPIN ANTICIPATION : anticipatory roll as ball nears contact
+   * Layer 6 — Y-BOUNCE DIP      : bat dips face-down when ball is low
+   *
+   * All layers are smooth (no jumps), all are always active to varying
+   * degrees so the bat is NEVER static — it is always lying/tilting.
+   * ──────────────────────────────────────────────────────────────────── */
+  var aiVX=(aPos.x-prevAX)/Math.max(dt,0.001);
+  var aiVY=(aPos.y-prevAY)/Math.max(dt,0.001);
+  aiIdleT+=dt;
+
+  /* Low-pass velocity filters */
+  var avS=clamp(22*dt,0,1);
+  smoothAVX+=(aiVX-smoothAVX)*avS;
+  /* smooth Y velocity separately for dip layer */
+  if(!window._smoothAVY) window._smoothAVY=0;
+  window._smoothAVY+=(aiVY-window._smoothAVY)*avS;
+
+  /* ── Layer 1: LATERAL LEAN — amplified 3× vs before ── */
+  var leanZ=clamp(smoothAVX*0.48,-0.82,0.82);
+
+  /* ── Layer 2: BALL-CHASE REACH ── */
+  var reachZ=0,reachX=0;
+  if(bLive&&bz<0){
+    var ballOffsetX=bx-aPos.x;
+    /* Strong side lean toward ball — wide exaggerated reach */
+    reachZ=clamp(ballOffsetX*0.70,-0.65,0.65);
+    /* Forward pitch scales with how close ball is and whether incoming */
+    var approachDist=Math.abs(bz-aPos.z);
+    var incoming=(bvz<0)?1.0:0.0;
+    var approachFactor=clamp((1.8-approachDist)*0.6,0,1)*incoming;
+    reachX=approachFactor*0.55;
+  }
+
+  /* ── Layer 3: STRIKE SWING ── */
+  aSwing=Math.max(0,aSwing-dt*4.8);
+  var strikeX=aSwing*0.72;                           /* strong forward pitch  */
+  var strikeZ=aSwing*clamp(smoothAVX*0.18,-0.40,0.40); /* side snap on swing  */
+
+  /* ── Layer 4: IDLE SWAY — two frequencies, always present ──
+   * Fast component: lively wrist wobble
+   * Slow component: weight-shift sway
+   * Both active during rally (low amp) and rest (full amp)           */
+  var idleAmt = bLive ? 0.45 : 1.0;
+  var idleZ = ( Math.sin(aiIdleT*2.2)*0.095
+              + Math.sin(aiIdleT*0.75+0.8)*0.065 ) * idleAmt;
+  var idleX = ( Math.sin(aiIdleT*1.6+2.0)*0.060
+              + Math.sin(aiIdleT*0.55+1.4)*0.040 ) * idleAmt;
+
+  /* ── Layer 5: SPIN ANTICIPATION — rolling tilt as contact nears ──
+   * Mimics a player rotating wrist before hitting the ball.
+   * Triggers in the last ~0.5 units of distance to bat.              */
+  var spinAntic=0;
+  if(bLive&&bvz<0&&bz<0){
+    var d2bat=Math.sqrt((bx-aPos.x)*(bx-aPos.x)+(bz-aPos.z)*(bz-aPos.z));
+    var anticFactor=clamp(1.0-d2bat*2.0,0,1);
+    spinAntic=Math.sin(aiIdleT*5.5)*anticFactor*0.22;
+  }
+
+  /* ── Layer 6: Y-BOUNCE DIP — bat face tilts down when ball is low ──
+   * When ball drops near table height the bat naturally tips forward,
+   * as if the player is "scooping" to get under it.                   */
+  var dipX=0;
+  if(bLive&&bz<0){
+    var heightFactor=clamp(1.0-(by-BR)*3.5,0,1);
+    dipX=heightFactor*0.35;
+  }
+
+  /* ── Final blend ── */
+  var tATZ = leanZ + reachZ + strikeZ + idleZ + spinAntic;
+  var tATX = reachX + strikeX + idleX + dipX;
+  /* Hard clamp so it never goes beyond physical bat range */
+  tATZ = clamp(tATZ,-1.05,1.05);
+  tATX = clamp(tATX,-0.90,0.90);
+
+  /* Faster lerp so all the rich motion lands crisply, never sluggish */
+  var atS=clamp(22*dt,0,1);
+  aPadTiltZ+=(tATZ-aPadTiltZ)*atS;
+  aPadTiltX+=(tATX-aPadTiltX)*atS;
+
+  /* Screen offset: amplified lateral + reach + swing dip */
+  var tAOX=clamp(-smoothAVX*13.0,-58,58);
+  if(bLive&&bz<0) tAOX+=clamp((bx-aPos.x)*18,-32,32);
+  var tAOY=clamp(-aSwing*26,-38,0)+clamp(-window._smoothAVY*6,-16,16);
+  var aOS=clamp(22*dt,0,1);
+  aPadOX+=(tAOX-aPadOX)*aOS;
+  aPadOY+=(tAOY-aPadOY)*aOS;
+}
+
+/* ── HIT DETECTION ── */
+function checkHits(){
+  if(!bLive||hitCD)return;
+  var STEPS=16,WIN2=0.022;
+
+  /* PLAYER */
+  if(hitter!=='player'){
+    if(bz>-0.5){
+      for(var i=0;i<=STEPS;i++){
+        var ft=(i/STEPS-0.5)*WIN2;
+        var sx=bx-bvx*ft,sy=by-bvy*ft,sz=bz-bvz*ft;
+        var dx=sx-pPos.x,dy=sy-pPos.y,dz=sz-pPos.z;
+        if(dx*dx+dy*dy+dz*dz<HIT_R*HIT_R){window._cx=dx;window._cy=dy;doHit('player');return;}
+      }
+    }
+  }
+
+  /* AI */
+  if(hitter!=='ai'){
+    if(bz<0.8){
+      var AI_HR=HIT_R*1.25,AI_HR2=AI_HR*AI_HR;
+      for(var j=0;j<=STEPS;j++){
+        var ft2=(j/STEPS-0.5)*WIN2;
+        var ax=bx-bvx*ft2,ay=by-bvy*ft2,az=bz-bvz*ft2;
+        var adx=ax-aPos.x,ady=ay-aPos.y,adz=az-aPos.z;
+        if(adx*adx+ady*ady+adz*adz<AI_HR2){doHit('ai');return;}
+      }
+    }
+  }
+}
+
+/* ── doHit ── */
+function doHit(who){
+  hitter=who;bounces=0;bounceOwner=null;lastBounceHalf=null;bounceCount=0;
+  hitCD=true;setTimeout(function(){hitCD=false;},30);
+  var hDir=(who==='player')?-1:1;
+  var d=DIFFS[diff];
+  rallyCount++;aiReactTimer=0;aiMissDecided=false;  /* reset miss decision for next incoming */
+  var safeX=HW*0.86;
+
+  if(who==='player'){
+    var tsf=isMobile?(window._tsf||1.0):1.0;
+    var vz=hDir*(HIT_VZ_MIN+Math.random()*HIT_VZ_VAR)*Math.min(tsf,1.3);
+    var vy=(HIT_VY+spin*0.6)*tsf;vy=clamp(vy,2.5,HIT_VY*1.5);
+    var cx=window._cx||0;
+    var vx=Math.sin(batTiltZ)*vz*0.55+cx*2.2+clamp(padVX*0.14,-0.7,0.7);
+    var lx=landingX(bx,vx,vy,pPos.y+BR+0.02);
+    if(Math.abs(lx)>safeX)vx*=safeX/Math.abs(lx);
+    vx=clamp(vx,-3.5,3.5);
+    var bsx_out=hDir*spin*4.0+clamp(-batTiltX*4.2,-2.6,2.6)+clamp(smoothPVX*0.7,-1.4,1.4);
+    var bsz_out=clamp(-batTiltZ*3.2,-2.4,2.4)-padVX*spin*1.6+clamp(smoothPVZ*0.5,-1.0,1.0);
+    bvx=vx;bvy=vy;bvz=vz;bsx=bsx_out;bsz=bsz_out;
+    by=pPos.y+BR+0.01;bz=pPos.z+hDir*(BR+0.02);pSwing=1.0;
+    if(isMobile&&activeBatTouchId!==null){batRing.classList.add('hitting');setTimeout(function(){batRing.classList.remove('hitting');},120);}
+    hitFlash('player');
+  }else{
+    var se=d.shotErr;
+    var vy2=HIT_VY+0.4;
+    var vz2=hDir*(HIT_VZ_MIN+HIT_VZ_VAR*0.5+(Math.random()-0.5)*se);
+    var tx=(Math.random()-0.5)*TW*(0.80-se*0.3);tx=clamp(tx,-safeX,safeX);
+    var disc=vy2*vy2+2*Math.abs(GRAV)*(aPos.y+BR+0.01-BR);
+    var tf=disc>0?(vy2+Math.sqrt(disc))/Math.abs(GRAV):0.5;
+    var rvx2=(tx-bx)/Math.max(tf,0.05);
+    var lx2=landingX(bx,rvx2,vy2,aPos.y+BR+0.01);
+    if(Math.abs(lx2)>safeX)rvx2*=safeX/Math.abs(lx2);
+    rvx2=clamp(rvx2,-4.0,4.0);
+
+    /* FIX 1: If CPU decided to miss, apply shot error here too */
+    if(aiWillMiss){
+      if(aiMissType===2){
+        /* Into net — hit downward with low vy so it clips net */
+        vy2=1.8+Math.random()*0.5;
+        vz2=hDir*(HIT_VZ_MIN*0.8);
+      }else if(aiMissType===3){
+        /* Too long — hit too hard upward, overshoots */
+        vy2=HIT_VY*1.5;
+        vz2=hDir*(HIT_VZ_MIN+HIT_VZ_VAR*1.5);
+      }
+      /* For types 0,1 the X positioning is already wrong from updateAI */
+    }
+
+    var aiSX=clamp(aPadTiltX*2.5,-2.0,2.0);
+    var aiSZ=clamp(aPadTiltZ*2.0,-1.8,1.8)+(Math.random()-0.5)*0.5;
+    bvx=rvx2;bvy=vy2;bvz=vz2;bsx=aiSX;bsz=aiSZ;
+    by=aPos.y+BR+0.01;bz=aPos.z+hDir*(BR+0.02);aSwing=1.4;
+    hitFlash('ai');
+  }
+
+  playHit(who==='player');bSQ=1.55;bSQx=0.72;
+  /* Spin-impact: boost ring opacity briefly so player sees spin imparted */
+  if(who==='player'){
+    spinRings[0].material.opacity=Math.min(Math.abs(bsz_out)/2.5,0.95);
+    spinRings[1].material.opacity=Math.min(Math.abs(bsx_out)/2.5,0.95);
+  }
+}
+
+/* ── RESET / SERVE ── */
+function resetBall(srv){
+  bLive=false;bWait=true;hitter=null;bounces=0;hitCD=false;bvx=bvy=bvz=bsx=bsz=0;bx=0;by=0.3;
+  bz=(srv==='player')?HL*0.5:-HL*0.5;trailPts.length=0;bSQ=1;bSQx=1;ballMesh.scale.set(1,1,1);
+  rallyCount=0;aiReactTimer=0;aiWillMiss=false;aiMissOffset=0;aiMissDecided=false;aiTargetY=0.14;
+  aTX_raw=0;aiIdleT=0;
+  showAssist=false;predictedLandX=null;
+  lastBounceHalf=null;bounceCount=0;pointPending=false;
+  physAccum=0;
+  /* Restore paddle positions to safe home positions */
+  if(netMode==='online'){
+    pPos.z = clamp(pPos.z, ONLINE_Z_MIN, P_ZONE_Z_MAX);
+    aPos.z = clamp(aPos.z, OPP_Z_MIN,    OPP_Z_MAX);
+  } else {
+    aPos.z=AI_Z_HOME;
+  }
+  updateServeBtn();
+}
+function doServe(who){
+  bWait=false;bLive=true;hitter=who;bounces=0;
+  lastBounceHalf=null;bounceCount=0;
+  var sDir=(who==='player')?-1:1;
+  var startX=(who==='player'?pPos.x:aPos.x)*0.4+(Math.random()-0.5)*0.2;
+  var startY=(who==='player'?pPos.y:aPos.y)+BR+0.10;
+  bvy=SERVE_VY;bvz=sDir*SERVE_VZ;
+  var rvx=(Math.random()-0.5)*0.8,lx=landingX(startX,rvx,bvy,startY),sx=HW*0.82;
+  if(Math.abs(lx)>sx)rvx*=sx/Math.abs(lx);
+  bvx=rvx;bx=startX;by=startY;bz=(who==='player')?pPos.z:aPos.z;updateServeBtn();
+}
+
+/* ── SCORING ── */
+var totalPointsScored = 0;
+var adInProgress      = false;
+
+/* ── AdMob Bridge ──────────────────────────────────────────────────
+ * The Android WebView exposes a global object called "AdMob"
+ * injected by the native Java/Kotlin side via addJavascriptInterface().
+ * All ad calls go through that bridge. If the bridge is absent
+ * (e.g. browser testing) the calls are silently ignored.
+ *
+ * Bridge methods expected on the Android side:
+ *   AdMob.showInterstitial()   → shows a preloaded interstitial
+ *   AdMob.showRewarded()       → shows a rewarded ad
+ *   AdMob.loadInterstitial()   → preloads next interstitial
+ *   AdMob.loadRewarded()       → preloads next rewarded ad
+ *   AdMob.showBanner()         → shows persistent banner
+ *   AdMob.hideBanner()         → hides banner
+ *
+ * Android side calls back into JS via:
+ *   window.onInterstitialClosed()  → called when interstitial dismissed
+ *   window.onRewardedClosed(rewarded) → called when rewarded ad closes
+ *                                       rewarded=true if user earned reward
+ * ────────────────────────────────────────────────────────────────── */
+function admobShowInterstitial(callback){
+  if(adInProgress){ if(callback) callback(); return; }
+  if(window.AdMob && typeof window.AdMob.showInterstitial==='function'){
+    adInProgress=true;
+    stopBGM();
+    /* Register one-time callback — Android will call this when ad closes */
+    window.onInterstitialClosed=function(){
+      window.onInterstitialClosed=null;
+      adInProgress=false;
+      fadeInBGM();
+      /* Preload next interstitial immediately */
+      try{ window.AdMob.loadInterstitial(); }catch(e){}
+      if(callback) callback();
+    };
+    /* Safety fallback — resume after 20s if callback never fires */
+    var safety=setTimeout(function(){
+      if(window.onInterstitialClosed){ window.onInterstitialClosed(); }
+    },20000);
+    try{ window.AdMob.showInterstitial(); }catch(e){
+      clearTimeout(safety); adInProgress=false; if(callback) callback();
+    }
+  } else {
+    /* No AdMob bridge — skip ad and continue */
+    if(callback) callback();
+  }
+}
+
+function admobShowRewarded(callback){
+  if(window.AdMob && typeof window.AdMob.showRewarded==='function'){
+    window.onRewardedClosed=function(rewarded){
+      window.onRewardedClosed=null;
+      try{ window.AdMob.loadRewarded(); }catch(e){}
+      if(callback) callback(!!rewarded);
+    };
+    var safety=setTimeout(function(){
+      if(window.onRewardedClosed){ window.onRewardedClosed(false); }
+    },40000);
+    try{ window.AdMob.showRewarded(); }catch(e){
+      clearTimeout(safety); if(callback) callback(false);
+    }
+  } else {
+    if(callback) callback(false);
+  }
+}
+
+function admobShowBanner(){
+  try{ if(window.AdMob) window.AdMob.showBanner(); }catch(e){}
+}
+function admobHideBanner(){
+  try{ if(window.AdMob) window.AdMob.hideBanner(); }catch(e){}
+}
+
+function scorePoint(winner){
+  if(gstate!=='play'){pointPending=false;return;}
+  bLive=false;showAssist=false;
+  if(winner==='player'){pScore++;document.getElementById('ps').textContent=pScore;showToast('Point!');playScore(true);showCelebration(true);}
+  else{aScore++;document.getElementById('as').textContent=aScore;playScore(false);showCelebration(false);}
+  srvCnt++;if(srvCnt>=2){srvCnt=0;server=server==='player'?'ai':'player';}
+  document.getElementById('servelbl').textContent=server==='player'?myName+' Serve':oppName+' Serve';
+  totalPointsScored++;
+  var won=Math.max(pScore,aScore)>=WIN&&Math.abs(pScore-aScore)>=2;
+  /* Show interstitial every 5 points — both CPU and online modes */
+  var showAd=!won&&(totalPointsScored%5===0);
+  function continueAfterPoint(){
+    pointPending=false;
+    if(won){
+      netSend({t:'score',ps:pScore,as:aScore,won:true});
+      endGame(pScore>aScore?'player':'ai');
+    }else{
+      netSend({t:'score',ps:pScore,as:aScore});
+      resetBall(server);
+      if(server==='ai')setTimeout(function(){
+        if(netMode==='online') netSend({t:'serve',who:'ai'});
+        doServe('ai');
+      },900);
+    }
+  }
+  setTimeout(function(){
+    if(showAd){ admobShowInterstitial(continueAfterPoint); }
+    else { continueAfterPoint(); }
+  },800);
+}
+
+var _matchStartTime = Date.now();
+var _totalGamesPlayed = 0;
+
+function endGame(w){
+  stopBGM();gstate='result';document.getElementById('sresult').classList.remove('hide');
+  var rt=document.getElementById('rtitle');rt.textContent=w==='player'?'Victory':'Defeat';
+  rt.style.background=w==='player'?'linear-gradient(135deg,#ff2233,#fff)':'linear-gradient(135deg,#2255ff,#aabbff)';
+  rt.style.webkitBackgroundClip='text';rt.style.webkitTextFillColor='transparent';
+  document.getElementById('rinfo').textContent=w==='player'?myName+' wins!':oppName+' wins!';
+  document.getElementById('rscore').innerHTML=w==='player'
+    ?'<span class="wc">'+pScore+'</span> — <span class="lc">'+aScore+'</span>'
+    :'<span class="lc">'+pScore+'</span> — <span class="wc">'+aScore+'</span>';
+  batRing.classList.remove('active');updateServeBtn();
+
+  /* Submit score to BattleX leaderboard */
+  _totalGamesPlayed++;
+  var durationMs = Date.now() - _matchStartTime;
+  var scoreData = {
+    type:          'TABLE_TENNIS_SCORE',
+    playerName:    myName   || 'Player',
+    opponentName:  oppName  || (netMode==='online' ? 'Online Player' : 'CPU'),
+    opponentType:  netMode==='online' ? 'online' : 'cpu',
+    playerScore:   pScore,
+    opponentScore: aScore,
+    won:           w==='player',
+    durationMs:    durationMs,
+    timesPlayed:   _totalGamesPlayed,
+    totalPoints:   totalPointsScored,
+  };
+  if(window.parent && window.parent !== window){
+    window.parent.postMessage(scoreData, '*');
+  }
+  /* Reset match timer for next game */
+  _matchStartTime = Date.now();
+
+  /* Show interstitial at end of every match */
+  admobShowInterstitial(null);
+}
+
+/* ── VFX ── */
+var toastT=null;
+function showToast(msg){var te=document.getElementById('toast');te.textContent=msg;te.classList.add('show');clearTimeout(toastT);toastT=setTimeout(function(){te.classList.remove('show');},700);}
+function hitFlash(who){var fl=new THREE.PointLight(who==='player'?0xff2233:0x2255ff,12,3.5),src=who==='player'?pPos:aPos;fl.position.set(src.x,src.y+0.1,src.z);scene.add(fl);setTimeout(function(){scene.remove(fl);},90);}
+var flashT=null;function flashTable(){tblMat.color.set(0x2aaa3a);clearTimeout(flashT);flashT=setTimeout(function(){tblMat.color.set(0x1a7a2a);},60);}
+function doRipple(){
+  var rv=new THREE.Vector3(bx,BR,bz);rv.project(camera);var rsx=(rv.x*0.5+0.5)*innerWidth,rsy=(-rv.y*0.5+0.5)*innerHeight;
+  var re=document.createElement('div');re.style.cssText='position:fixed;pointer-events:none;z-index:5;left:'+rsx+'px;top:'+rsy+'px;width:24px;height:24px;border-radius:50%;border:2px solid rgba(255,230,80,0.95);transform:translate(-50%,-50%) scale(0);opacity:1;';
+  document.body.appendChild(re);var rt0=performance.now();
+  (function anim(){var rp=Math.min((performance.now()-rt0)/280,1);re.style.transform='translate(-50%,-50%) scale('+(rp*5.5)+')';re.style.opacity=''+(1-rp);if(rp<1)requestAnimationFrame(anim);else re.remove();})();
+}
+
+/* ── MENU ── */
+var thTimer=null;
+function showScreen(id){['smenu','sjoin','slobby','sresult'].forEach(function(s){document.getElementById(s).classList.toggle('hide',s!==id);});}
+
+function startGame(){
+  pScore=0;aScore=0;srvCnt=0;totalPointsScored=0;
+  document.getElementById('ps').textContent='0';document.getElementById('as').textContent='0';
+  server=(netMode==='online'&&!isHost)?'ai':'player';
+  /* Apply names — for CPU mode, use the saved myName */
+  if(netMode!=='online'){
+    myName = getMyName();
+    oppName = 'CPU';
+  }
+  document.getElementById('lbl-you').textContent  = myName;
+  document.getElementById('lbl-opp').textContent  = oppName;
+  document.getElementById('servelbl').textContent=server==='player'?myName+' Serve':oppName+' Serve';
+  showScreen(null);
+  document.getElementById('smenu').classList.add('hide');
+  document.getElementById('sresult').classList.add('hide');
+  gstate='play';pointPending=false;resetBall(server);mNX=0;mNY=0.3;
+  fadeInBGM();
+  if(server==='ai'){
+    setTimeout(function(){
+      if(netMode==='online') netSend({t:'serve',who:'ai'});
+      doServe('ai');
+    },900);
+  }
+  if(isMobile){var th=document.getElementById('touch-hint');th.style.opacity='1';clearTimeout(thTimer);thTimer=setTimeout(function(){th.style.opacity='0';},2800);}
+  updateServeBtn();
+}
+document.getElementById('brematch').addEventListener('click',function(){
+  if(netMode==='online'){netSend({t:'rematch'});showToast('Waiting…');}
+  else startGame();
+});
+document.getElementById('bmenu').addEventListener('click',function(){
+  stopBGM();netDisconnect();showScreen('smenu');gstate='menu';resetBall('player');updateServeBtn();
+});
+window._serveOpt=0;
+function setOpt(n){window._serveOpt=n;document.querySelectorAll('#optswitch button').forEach(function(b,i){b.classList.toggle('active',i===n);});}
+
+/* ── MAIN LOOP ──
+ * FIX 2: Fixed-timestep physics accumulator.
+ * Raw delta time is accumulated; physics runs in fixed PHYS_STEP chunks.
+ * This ensures ball speed is ALWAYS stable regardless of frame rate or
+ * tab visibility changes that could cause large dt spikes.
+ */
+var lastT=null,camT=0;
+function loop(now){
+  requestAnimationFrame(loop);
+  if(lastT===null){lastT=now;return;}
+  /* FIX 2: clamp raw dt to 100ms max (handles tab switch / focus loss) */
+  var rawDt=Math.min((now-lastT)/1000,0.100);
+  lastT=now;
+  camT+=Math.min(rawDt,0.018);
+
+  /* ── Game logic runs at render rate (UI/input) ── */
+  var logicDt=Math.min(rawDt,0.018);
+  if(gstate==='play'){updatePlayer(logicDt);updateAI(logicDt);}
+  if(bWait&&gstate==='play'){var src=server==='player'?pPos:aPos;bx=src.x;bz=src.z;by=src.y+0.10;}
+
+  /* ── Physics runs at fixed rate via accumulator ── */
+  if(gstate==='play'){
+    physAccum+=rawDt;
+    var steps=0;
+    while(physAccum>=PHYS_STEP&&steps<MAX_PHYS_CATCH){
+      physicsStep();
+      checkHits();
+      physAccum-=PHYS_STEP;
+      steps++;
+      if(!bLive)break;  /* stop stepping if point awarded */
+    }
+    /* Clamp accumulator — prevents spiral of death after long pause */
+    if(physAccum>PHYS_STEP*MAX_PHYS_CATCH)physAccum=0;
+  }
+
+  /* ── Render ── */
+  ballMesh.position.set(bx,by,bz);
+  ballMesh.rotation.x+=(bvz*14+bsz*20)*logicDt;
+  ballMesh.rotation.z-=(bvx*14+bsx*20)*logicDt;
+  ballMesh.rotation.y+=bsx*bsz*0.6*logicDt;
+  bSQ+=(1-bSQ)*Math.min(22*logicDt,1);bSQx+=(1-bSQx)*Math.min(22*logicDt,1);ballMesh.scale.set(bSQx,bSQ,bSQx);
+  bShadow.position.set(bx,0.001,bz);var sc=Math.max(0.05,1-by*0.86);bShadow.scale.setScalar(sc);bShadMat.opacity=0.45*Math.max(sc,0);
+  trailPts.push({x:bx,y:by,z:bz});if(trailPts.length>TRL)trailPts.shift();
+  var tpa=trailGeo.attributes.position;for(var ti=0;ti<TRL;ti++){var tp=trailPts[ti]||{x:0,y:0,z:0};tpa.setXYZ(ti,tp.x,tp.y,tp.z);}tpa.needsUpdate=true;
+  var ballSpd=Math.sqrt(bvx*bvx+bvz*bvz);
+  trailMat.opacity=bLive?Math.min(Math.max(ballSpd*0.05,0.04),0.40):0;
+
+  /* ── SPIN VISUALISATION ── */
+  var spinMag=Math.sqrt(bsx*bsx+bsz*bsz);   /* total spin magnitude 0-~3 */
+  var spinNorm=Math.min(spinMag/2.5,1.0);    /* normalised 0-1 */
+
+  if(bLive && spinMag>0.08){
+    /* Determine dominant spin type */
+    var absSX=Math.abs(bsx), absSZ=Math.abs(bsz);
+    var isTopspin  = bsz<-0.15 && absSZ>absSX*0.6;  /* bsz negative = topspin */
+    var isBackspin = bsz> 0.15 && absSZ>absSX*0.6;  /* bsz positive = backspin */
+    var isSideSpin = absSX>0.25 && absSX>absSZ*0.7;
+
+    /* Ball emissive color: topspin=red-orange, backspin=cyan-blue, sidespin=yellow-green, neutral=orange */
+    var eR,eG,eB;
+    if(isTopspin){
+      eR=1.0; eG=0.18+spinNorm*0.15; eB=0.0;   /* red-orange glow */
+    } else if(isBackspin){
+      eR=0.0; eG=0.55+spinNorm*0.3; eB=1.0;    /* cyan-blue glow */
+    } else if(isSideSpin){
+      eR=0.9; eG=0.9+spinNorm*0.1; eB=0.0;     /* yellow glow */
+    } else {
+      eR=1.0; eG=0.27; eB=0.0;                 /* default orange */
+    }
+    ballMesh.material.emissive.setRGB(eR*spinNorm*0.9, eG*spinNorm*0.7, eB*spinNorm*0.9);
+    ballMesh.material.emissiveIntensity=0.45+spinNorm*1.1;
+
+    /* Trail color matches spin */
+    if(isTopspin)      trailMat.color.setHex(0xff3300);
+    else if(isBackspin) trailMat.color.setHex(0x00aaff);
+    else if(isSideSpin) trailMat.color.setHex(0xffdd00);
+    else                trailMat.color.setHex(0xff8800);
+
+    /* Spin rings: position on ball, animate rotation */
+    spinRings[0].position.set(bx,by,bz);  /* topspin/backspin ring */
+    spinRings[1].position.set(bx,by,bz);  /* sidespin ring */
+    spinRings[2].position.set(bx,by,bz);  /* combo ring */
+
+    /* Ring 0 spins around Y showing topspin (rotate in direction of bsz) */
+    spinRings[0].rotation.z+=bsz*logicDt*6;
+    spinRings[0].rotation.y+=logicDt*2;
+    /* Ring 1 spins showing sidespin (rotate in direction of bsx) */
+    spinRings[1].rotation.x+=bsx*logicDt*6;
+    spinRings[1].rotation.y-=logicDt*2;
+    /* Ring 2 is a combo wobble */
+    spinRings[2].rotation.x+=bsz*logicDt*3;
+    spinRings[2].rotation.z-=bsx*logicDt*3;
+
+    /* Ring opacity: topspin drives ring0, sidespin drives ring1 */
+    var tsAlpha=Math.min(absSZ/2.0,1.0)*spinNorm;
+    var ssAlpha=Math.min(absSX/2.0,1.0)*spinNorm;
+    spinRings[0].material.opacity=tsAlpha*0.85;
+    spinRings[1].material.opacity=ssAlpha*0.85;
+    spinRings[2].material.opacity=Math.min(tsAlpha,ssAlpha)*0.60;
+
+    /* Disc: floats just above ball, tilts to show spin plane */
+    spinDisc.position.set(bx,by+BR*1.05,bz);
+    spinDisc.rotation.x=-Math.PI/2 + bsz*0.5;
+    spinDisc.rotation.z= bsx*0.5;
+    var discColor=isTopspin?0xff3300:isBackspin?0x00aaff:0xffdd00;
+    spinDiscMat.color.setHex(discColor);
+    spinDiscMat.opacity=spinNorm*0.22;
+
+  } else {
+    /* No spin — reset to neutral */
+    ballMesh.material.emissive.setRGB(1.0,0.267,0);
+    ballMesh.material.emissiveIntensity=0.45;
+    trailMat.color.setHex(0xff8800);
+    spinRings[0].material.opacity=0;
+    spinRings[1].material.opacity=0;
+    spinRings[2].material.opacity=0;
+    spinDiscMat.opacity=0;
+  }
+
+  if(!isMobile)camera.position.x+=(mNX*0.05-camera.position.x)*Math.min(logicDt,1);
+  camera.position.y=(isMobile?(innerWidth>innerHeight?2.4:3.8):2.8)+Math.sin(camT*0.14)*0.008;camera.lookAt(0,0,0);
+  renderer.render(scene,camera);
+
+  /* ── 2D overlay ── */
+  ctx.clearRect(0,0,innerWidth,innerHeight);
+  if(gstate==='play'||gstate==='menu'){
+    var pSc=worldToScreen(pPos.x,pPos.y,pPos.z),aSc=worldToScreen(aPos.x,aPos.y,aPos.z);
+    var sk=Math.min(60*logicDt,1.0);
+    pPadX+=(pSc.x-pPadX)*sk;pPadY+=(pSc.y-pPadY)*sk;
+    aPadX+=(aSc.x-aPadX)*sk;aPadY+=(aSc.y-aPadY)*sk;
+    var pR=Math.max(22,Math.min(90,worldRadius(pPos.x,pPos.y,pPos.z,0.235)));
+    var aR=Math.max(22,Math.min(90,worldRadius(aPos.x,aPos.y,aPos.z,0.235)));
+    pPadR=pR;aPadR=aR;
+    if(gstate==='play'){
+      if(isMobile&&showAssist&&predictedLandX!==null&&bLive&&bvz>0){
+        var tSc=worldToScreen(predictedLandX,0.002,pPos.z),al=clamp(bvz*0.1,0.12,0.45),gr=38;
+        var lg=ctx.createRadialGradient(tSc.x,tSc.y,2,tSc.x,tSc.y,gr);
+        lg.addColorStop(0,'rgba(255,200,0,'+al+')');lg.addColorStop(0.4,'rgba(255,140,0,'+(al*0.5)+')');lg.addColorStop(1,'rgba(255,80,0,0)');
+        ctx.beginPath();ctx.arc(tSc.x,tSc.y,gr,0,Math.PI*2);ctx.fillStyle=lg;ctx.fill();
+        var ms=8;ctx.strokeStyle='rgba(255,220,0,'+(al*1.8)+')';ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.moveTo(tSc.x-ms,tSc.y);ctx.lineTo(tSc.x+ms,tSc.y);ctx.stroke();
+        ctx.beginPath();ctx.moveTo(tSc.x,tSc.y-ms*0.5);ctx.lineTo(tSc.x,tSc.y+ms*0.5);ctx.stroke();
+      }
+      if(bWait){
+        var isP=(server==='player'),r=isP?255:50,g=isP?40:110,b=isP?60:255;
+        var cHex=isP?'#ff2233':'#2266ff';
+        var cR=function(a){return 'rgba('+r+','+g+','+b+','+a+')';};
+        var bSc=worldToScreen(bx,by,bz),gSc=worldToScreen(bx,0.001,bz),brad=isP?(pPadR||38):(aPadR||32),t=now*0.001;
+        ctx.save();
+        var sp=ctx.createRadialGradient(gSc.x,gSc.y,0,gSc.x,gSc.y,56);sp.addColorStop(0,cR(0.32));sp.addColorStop(0.6,cR(0.09));sp.addColorStop(1,cR(0));
+        ctx.beginPath();ctx.ellipse(gSc.x,gSc.y,56,22,0,0,Math.PI*2);ctx.fillStyle=sp;ctx.fill();
+        var opt=isMobile?0:(window._serveOpt||0);
+        if(opt===0){
+          var aura=ctx.createRadialGradient(bSc.x,bSc.y,brad*0.2,bSc.x,bSc.y,brad*2.2);aura.addColorStop(0,cR(0.42));aura.addColorStop(0.5,cR(0.14));aura.addColorStop(1,cR(0));ctx.beginPath();ctx.arc(bSc.x,bSc.y,brad*2.2,0,Math.PI*2);ctx.fillStyle=aura;ctx.fill();
+          if(isP){var bn=Math.sin(t*5)*10,arrY=bSc.y+brad+18+bn,al2=22;ctx.strokeStyle='#ffffff';ctx.lineWidth=4;ctx.lineCap='round';ctx.shadowColor=cR(0.95);ctx.shadowBlur=16;for(var ci=0;ci<2;ci++){var cy=arrY+ci*16;ctx.globalAlpha=ci===0?1.0:0.45;ctx.beginPath();ctx.moveTo(bSc.x-al2,cy-al2*0.55);ctx.lineTo(bSc.x,cy);ctx.lineTo(bSc.x+al2,cy-al2*0.55);ctx.stroke();}ctx.shadowBlur=0;ctx.globalAlpha=1;}
+          var fsz=clamp(Math.round(innerWidth*0.032),11,16);ctx.font='bold '+fsz+'px "Bebas Neue",sans-serif';ctx.textAlign='center';ctx.globalAlpha=0.72+0.28*Math.sin(t*5);ctx.fillStyle='#ffffff';ctx.shadowColor=cR(0.9);ctx.shadowBlur=12;
+          ctx.fillText(isP?(isMobile?'TAP SERVE BUTTON':myName.toUpperCase()+' SERVE'):oppName.toUpperCase()+' SERVE',bSc.x,bSc.y-brad-14);
+          ctx.shadowBlur=0;ctx.globalAlpha=1;ctx.textAlign='left';
+        }else if(opt===1){
+          var rR=brad*2.5,sw=t*2.2,ws=Math.PI*0.55;ctx.beginPath();ctx.arc(bSc.x,bSc.y,rR,0,Math.PI*2);ctx.strokeStyle=cR(0.30);ctx.lineWidth=1.5;ctx.setLineDash([5,5]);ctx.stroke();ctx.setLineDash([]);
+          ctx.beginPath();ctx.moveTo(bSc.x,bSc.y);ctx.arc(bSc.x,bSc.y,rR,sw,sw+ws);ctx.closePath();
+          var wg=ctx.createLinearGradient(bSc.x+Math.cos(sw)*rR*0.5,bSc.y+Math.sin(sw)*rR*0.5,bSc.x+Math.cos(sw+ws)*rR*0.5,bSc.y+Math.sin(sw+ws)*rR*0.5);wg.addColorStop(0,cR(0.04));wg.addColorStop(1,cR(0.32));ctx.fillStyle=wg;ctx.fill();
+          ctx.beginPath();ctx.moveTo(bSc.x,bSc.y);ctx.lineTo(bSc.x+Math.cos(sw+ws)*rR,bSc.y+Math.sin(sw+ws)*rR);ctx.strokeStyle=cR(0.85);ctx.lineWidth=2;ctx.shadowColor=cR(0.9);ctx.shadowBlur=10;ctx.stroke();ctx.shadowBlur=0;
+          [0.4,0.7,1.0].forEach(function(rf){ctx.beginPath();ctx.arc(bSc.x,bSc.y,rR*rf,0,Math.PI*2);ctx.strokeStyle=cR(0.18);ctx.lineWidth=1;ctx.stroke();});
+          var blX=bSc.x+Math.cos(sw+ws)*rR*0.92,blY=bSc.y+Math.sin(sw+ws)*rR*0.92;ctx.beginPath();ctx.arc(blX,blY,5,0,Math.PI*2);ctx.fillStyle='#fff';ctx.shadowColor=cR(1);ctx.shadowBlur=18;ctx.fill();ctx.shadowBlur=0;
+          ctx.font='bold 12px "Bebas Neue",sans-serif';ctx.textAlign='center';ctx.globalAlpha=0.65+0.35*Math.sin(t*4);ctx.fillStyle='#fff';ctx.shadowColor=cR(0.8);ctx.shadowBlur=8;ctx.fillText(isP?myName.toUpperCase()+' SERVE':oppName.toUpperCase()+' SERVE',bSc.x,bSc.y-rR-12);ctx.shadowBlur=0;ctx.globalAlpha=1;ctx.textAlign='left';
+        }else if(opt===2){
+          for(var ri=0;ri<3;ri++){var rph=((t*0.85+ri*0.33)%1.0);ctx.beginPath();ctx.arc(bSc.x,bSc.y,brad*0.8+rph*brad*2.8,0,Math.PI*2);ctx.strokeStyle=cR((1-rph)*0.50);ctx.lineWidth=2;ctx.stroke();}
+          var ig=ctx.createRadialGradient(bSc.x,bSc.y,brad*0.2,bSc.x,bSc.y,brad*1.5);ig.addColorStop(0,cR(0.40));ig.addColorStop(0.5,cR(0.12));ig.addColorStop(1,cR(0));ctx.beginPath();ctx.arc(bSc.x,bSc.y,brad*1.5,0,Math.PI*2);ctx.fillStyle=ig;ctx.fill();
+          var cLn=brad*1.1,cGp=brad*0.72,cAn=t*0.6;ctx.strokeStyle=cHex;ctx.lineWidth=2.2;ctx.shadowColor=cR(0.9);ctx.shadowBlur=10;ctx.lineCap='round';
+          for(var ai2=0;ai2<4;ai2++){var a2=cAn+ai2*Math.PI*0.5;ctx.beginPath();ctx.moveTo(bSc.x+Math.cos(a2)*cGp,bSc.y+Math.sin(a2)*cGp);ctx.lineTo(bSc.x+Math.cos(a2)*(cGp+cLn),bSc.y+Math.sin(a2)*(cGp+cLn));ctx.stroke();}
+          ctx.shadowBlur=0;ctx.lineCap='butt';
+          var bxR=brad*2.0,bkL=brad*0.55,brth=1+0.06*Math.sin(t*4);[[-1,-1,1,0,0,1],[1,-1,-1,0,0,1],[1,1,-1,0,0,-1],[-1,1,1,0,0,-1]].forEach(function(c){var cx2=bSc.x+c[0]*bxR*brth,cy2=bSc.y+c[1]*bxR*brth;ctx.lineWidth=2.8;ctx.strokeStyle=cHex;ctx.shadowColor=cR(0.9);ctx.shadowBlur=12;ctx.lineCap='square';ctx.beginPath();ctx.moveTo(cx2,cy2);ctx.lineTo(cx2+c[2]*bkL,cy2);ctx.stroke();ctx.beginPath();ctx.moveTo(cx2,cy2);ctx.lineTo(cx2,cy2+c[5]*bkL);ctx.stroke();});
+          ctx.shadowBlur=0;ctx.lineCap='butt';var dp3=0.5+0.5*Math.sin(t*8);ctx.beginPath();ctx.arc(bSc.x,bSc.y,4+dp3*2,0,Math.PI*2);ctx.fillStyle='#fff';ctx.shadowColor=cR(1);ctx.shadowBlur=14;ctx.fill();ctx.shadowBlur=0;
+          if(isP){ctx.font='bold 12px "Rajdhani",sans-serif';ctx.textAlign='center';ctx.globalAlpha=Math.sin(t*5)>0?1.0:0.55;ctx.fillStyle='#fff';ctx.shadowColor=cR(0.9);ctx.shadowBlur=10;ctx.fillText('CLICK TO SERVE',bSc.x,bSc.y-bxR*brth-14);ctx.shadowBlur=0;ctx.globalAlpha=1;ctx.textAlign='left';}
+        }else if(opt===3){
+          var chrg=(Math.sin(t*1.8)+1)*0.5,gR=brad*(1.2+chrg*1.4);var gl3=ctx.createRadialGradient(bSc.x,bSc.y,brad*0.3,bSc.x,bSc.y,gR);gl3.addColorStop(0,cR(0.30+chrg*0.35));gl3.addColorStop(0.5,cR(0.10+chrg*0.12));gl3.addColorStop(1,cR(0));ctx.beginPath();ctx.arc(bSc.x,bSc.y,gR,0,Math.PI*2);ctx.fillStyle=gl3;ctx.fill();
+          if(isP){var bX=bSc.x+brad+22,bH=80,bW=14,bY=bSc.y-bH/2;ctx.fillStyle='rgba(0,0,0,0.45)';ctx.beginPath();ctx.roundRect(bX-bW/2,bY,bW,bH,bW/2);ctx.fill();var bgr=ctx.createLinearGradient(0,bY+bH,0,bY);bgr.addColorStop(0,isP?'#ff2233':'#2255ff');bgr.addColorStop(0.5,isP?'#ff9900':'#00aaff');bgr.addColorStop(1,'#00ff88');ctx.fillStyle=bgr;ctx.save();ctx.beginPath();ctx.roundRect(bX-bW/2,bY,bW,bH,bW/2);ctx.clip();ctx.shadowColor=cR(0.9);ctx.shadowBlur=14;ctx.fillRect(bX-bW/2,bY+bH-bH*chrg,bW,bH*chrg);ctx.shadowBlur=0;ctx.restore();ctx.strokeStyle=cR(0.55);ctx.lineWidth=1.5;ctx.beginPath();ctx.roundRect(bX-bW/2,bY,bW,bH,bW/2);ctx.stroke();ctx.font='bold 9px "Rajdhani",sans-serif';ctx.textAlign='center';ctx.fillStyle=cHex;ctx.globalAlpha=0.9;ctx.fillText('POWER',bX,bY-8);ctx.globalAlpha=1;if(chrg>0.88){ctx.font='bold 28px "Bebas Neue",sans-serif';ctx.textAlign='center';ctx.fillStyle='#fff';ctx.shadowColor=cR(1);ctx.shadowBlur=28;ctx.globalAlpha=chrg;ctx.fillText('SERVE!',bSc.x,bSc.y-brad-22);ctx.shadowBlur=0;ctx.globalAlpha=1;}ctx.textAlign='left';}
+          if(!isP){ctx.font='bold 13px "Bebas Neue",sans-serif';ctx.textAlign='center';ctx.globalAlpha=0.65+0.35*Math.sin(t*3);ctx.fillStyle='#fff';ctx.shadowColor=cR(0.8);ctx.shadowBlur=10;ctx.fillText(oppName.toUpperCase()+' SERVING',bSc.x,bSc.y-brad-16);ctx.shadowBlur=0;ctx.globalAlpha=1;ctx.textAlign='left';}
+        }else if(opt===4){
+          var oR=brad*2.4;ctx.beginPath();ctx.ellipse(bSc.x,bSc.y,oR,oR*0.38,t*0.3,0,Math.PI*2);ctx.strokeStyle=cR(0.20);ctx.lineWidth=1.2;ctx.setLineDash([4,6]);ctx.stroke();ctx.setLineDash([]);ctx.beginPath();ctx.ellipse(bSc.x,bSc.y,oR*0.42,oR,t*0.3+Math.PI/2,0,Math.PI*2);ctx.strokeStyle=cR(0.15);ctx.lineWidth=1.0;ctx.stroke();
+          for(var oi=0;oi<5;oi++){var oa=t*2.5+(oi/5)*Math.PI*2,ox4=bSc.x+Math.cos(oa)*oR,oy4=bSc.y+Math.sin(oa)*oR*0.38;var tg4=ctx.createRadialGradient(ox4,oy4,0,ox4,oy4,10);tg4.addColorStop(0,cR(0.9));tg4.addColorStop(1,cR(0));ctx.beginPath();ctx.arc(ox4,oy4,10,0,Math.PI*2);ctx.fillStyle=tg4;ctx.fill();ctx.beginPath();ctx.arc(ox4,oy4,3.5,0,Math.PI*2);ctx.fillStyle='#fff';ctx.shadowColor=cR(1);ctx.shadowBlur=12;ctx.fill();ctx.shadowBlur=0;}
+          var pls=(Math.sin(t*4)+1)*0.5,nG=ctx.createRadialGradient(bSc.x,bSc.y,brad*0.3,bSc.x,bSc.y,brad*(1.2+pls*0.5));nG.addColorStop(0,cR(0.35+pls*0.25));nG.addColorStop(0.6,cR(0.10));nG.addColorStop(1,cR(0));ctx.beginPath();ctx.arc(bSc.x,bSc.y,brad*(1.2+pls*0.5),0,Math.PI*2);ctx.fillStyle=nG;ctx.fill();
+          ctx.font='bold 12px "Bebas Neue",sans-serif';ctx.textAlign='center';ctx.globalAlpha=0.70+0.30*Math.sin(t*3.5);ctx.fillStyle='#fff';ctx.shadowColor=cR(0.85);ctx.shadowBlur=10;ctx.fillText(isP?myName.toUpperCase()+' SERVE':oppName.toUpperCase()+' SERVE',bSc.x,bSc.y-oR-14);ctx.shadowBlur=0;ctx.globalAlpha=1;ctx.textAlign='left';
+        }else if(opt===5){
+          for(var pi2=0;pi2<4;pi2++){var ph5=((t*1.4+pi2/4)%1.0),pr5=brad*0.6+ph5*brad*3.8,pa5=(1-ph5)*(1-ph5)*0.70,pw5=2.5-ph5*1.5;ctx.beginPath();ctx.arc(bSc.x,bSc.y,pr5,0,Math.PI*2);ctx.strokeStyle=cR(pa5);ctx.lineWidth=pw5;ctx.shadowColor=cR(pa5*0.8);ctx.shadowBlur=8*(1-ph5);ctx.stroke();ctx.shadowBlur=0;}
+          var iGl=ctx.createRadialGradient(bSc.x,bSc.y,0,bSc.x,bSc.y,brad*1.0);iGl.addColorStop(0,cR(0.55));iGl.addColorStop(1,cR(0));ctx.beginPath();ctx.arc(bSc.x,bSc.y,brad*1.0,0,Math.PI*2);ctx.fillStyle=iGl;ctx.fill();
+          ctx.font='bold 12px "Bebas Neue",sans-serif';ctx.textAlign='center';ctx.globalAlpha=0.60+0.40*Math.sin(t*4.5);ctx.fillStyle='#fff';ctx.shadowColor=cR(0.9);ctx.shadowBlur=12;ctx.fillText(isP?myName.toUpperCase()+' SERVE':oppName.toUpperCase()+' SERVE',bSc.x,bSc.y-brad*4.5-8);ctx.shadowBlur=0;ctx.globalAlpha=1;ctx.textAlign='left';
+        }else if(opt===6){
+          var hH=brad*4.0,hW2=brad*1.1,hSt=24,hOf=bSc.y-hH/2;ctx.lineWidth=2.5;ctx.lineCap='round';ctx.shadowBlur=8;
+          for(var st2=0;st2<2;st2++){var sp6=st2*Math.PI+t*3.0;ctx.beginPath();for(var hi6=0;hi6<=hSt;hi6++){var hp6=hi6/hSt,hx6=bSc.x+Math.sin(hp6*Math.PI*3+sp6)*hW2,hy6=hOf+hp6*hH;if(hi6===0)ctx.moveTo(hx6,hy6);else ctx.lineTo(hx6,hy6);}ctx.strokeStyle=st2===0?cR(0.85):'rgba(255,255,255,0.65)';ctx.shadowColor=st2===0?cR(0.95):'rgba(255,255,255,0.7)';ctx.stroke();}
+          ctx.lineWidth=1.2;ctx.shadowBlur=0;for(var hi7=0;hi7<=hSt;hi7+=2){var hp7=hi7/hSt,hx71=bSc.x+Math.sin(hp7*Math.PI*3+t*3.0)*hW2,hx72=bSc.x+Math.sin(hp7*Math.PI*3+Math.PI+t*3.0)*hW2,hy7=hOf+hp7*hH;ctx.beginPath();ctx.moveTo(hx71,hy7);ctx.lineTo(hx72,hy7);ctx.strokeStyle=cR(0.35);ctx.stroke();}
+          ctx.lineCap='butt';ctx.shadowBlur=0;var hAu=ctx.createRadialGradient(bSc.x,bSc.y,brad*0.4,bSc.x,bSc.y,brad*1.6);hAu.addColorStop(0,cR(0.38));hAu.addColorStop(1,cR(0));ctx.beginPath();ctx.arc(bSc.x,bSc.y,brad*1.6,0,Math.PI*2);ctx.fillStyle=hAu;ctx.fill();
+          ctx.font='bold 12px "Bebas Neue",sans-serif';ctx.textAlign='center';ctx.globalAlpha=0.65+0.35*Math.sin(t*3.2);ctx.fillStyle='#fff';ctx.shadowColor=cR(0.85);ctx.shadowBlur=10;ctx.fillText(isP?myName.toUpperCase()+' SERVE':oppName.toUpperCase()+' SERVE',bSc.x,hOf-12);ctx.shadowBlur=0;ctx.globalAlpha=1;ctx.textAlign='left';
+        }else if(opt===7){
+          for(var bi7=0;bi7<3;bi7++){var bp7=((t*1.8+bi7/3)%1.0),bpE=1-Math.pow(1-bp7,3),bR7=brad*0.5+bpE*brad*4.2,bA7=(1-bp7)*0.75,bL7=(1-bp7)*4.5+0.5;ctx.beginPath();ctx.arc(bSc.x,bSc.y,bR7,0,Math.PI*2);ctx.strokeStyle=cR(bA7);ctx.lineWidth=bL7;ctx.shadowColor=cR(bA7*0.85);ctx.shadowBlur=14*(1-bp7);ctx.stroke();ctx.shadowBlur=0;}
+          for(var si8=0;si8<8;si8++){var sA8=(si8/8)*Math.PI*2+t*0.8,sPh=((t*1.8+si8/8*0.5)%1.0),sL8=brad*0.8+sPh*brad*3.0,sAl=(1-sPh)*0.60;ctx.beginPath();ctx.moveTo(bSc.x+Math.cos(sA8)*brad*0.5,bSc.y+Math.sin(sA8)*brad*0.5);ctx.lineTo(bSc.x+Math.cos(sA8)*sL8,bSc.y+Math.sin(sA8)*sL8);ctx.strokeStyle=cR(sAl);ctx.lineWidth=1.5;ctx.shadowColor=cR(sAl);ctx.shadowBlur=6;ctx.stroke();ctx.shadowBlur=0;}
+          var cP7=(Math.sin(t*6)+1)*0.5,cG7=ctx.createRadialGradient(bSc.x,bSc.y,0,bSc.x,bSc.y,brad*(0.9+cP7*0.5));cG7.addColorStop(0,'rgba(255,255,255,'+(0.55+cP7*0.35)+')');cG7.addColorStop(0.4,cR(0.40+cP7*0.20));cG7.addColorStop(1,cR(0));ctx.beginPath();ctx.arc(bSc.x,bSc.y,brad*(0.9+cP7*0.5),0,Math.PI*2);ctx.fillStyle=cG7;ctx.fill();
+          ctx.font='bold 14px "Bebas Neue",sans-serif';ctx.textAlign='center';ctx.globalAlpha=0.75+0.25*Math.sin(t*7);ctx.fillStyle='#fff';ctx.shadowColor=cR(1);ctx.shadowBlur=18;ctx.fillText(isP?myName.toUpperCase()+' SERVE':oppName.toUpperCase()+' SERVE',bSc.x,bSc.y-brad*5-10);ctx.shadowBlur=0;ctx.globalAlpha=1;ctx.textAlign='left';
+        }
+        ctx.restore();
+      }
+      /* ── Draw paddles with net-aware positioning ───────────────────────
+       * Net is at 50% screen height on all devices.
+       * Paddle geometry relative to center:
+       *   Face top:    -R * 1.12  (above center)
+       *   Handle bot:  +R * 2.10  (below center)
+       *   Full height: R * 3.22
+       *
+       * Player (red):  center must be >= netY + R*1.12 + gap  → face top clears net
+       * Opponent (blue): center must be <= netY - R*2.10 - gap → handle bottom clears net
+       *
+       * Clip is set with enough room so the FULL paddle including face/handle
+       * is never cut — clip only catches extreme edge cases.               */
+      var netScreenY = innerHeight * 0.50;
+      var gap = 6;
+
+      /* Player: push center down so face top is below the net */
+      var pFullTop = pR * 1.18;
+      var pPadYSafe = Math.max(pPadY, netScreenY + pFullTop + gap);
+
+      /* Opponent: push center up so handle bottom is above the net */
+      var aFullBot = aR * 3.40;
+      var aPadYSafe = Math.min(aPadY, netScreenY - aFullBot - gap);
+      /* aPadOY (depth sway) is added inside drawPaddle via the oY parameter.
+         Clamp the combined position so handle bottom never reaches the net. */
+      var aPadYFinal = Math.min(aPadYSafe + aPadOY, netScreenY - aFullBot - gap);
+      var aPadOYClamped = aPadYFinal - aPadYSafe;
+
+      /* Clip generously — only catches overshoot, never cuts the paddle */
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, netScreenY - pFullTop, innerWidth, innerHeight);
+      ctx.clip();
+      drawPaddle(pPadX, pPadYSafe, pPadTiltZ, pPadTiltX, pR, true, pPadOX, pPadOY);
+      ctx.restore();
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.rect(0, 0, innerWidth, netScreenY + aFullBot);
+      ctx.clip();
+      drawPaddle(aPadX, aPadYSafe, aPadTiltZ, aPadTiltX, aR, false, aPadOX, aPadOYClamped);
+      ctx.restore();
+    }
+  }
+}
+requestAnimationFrame(loop);
+</script>
+
+<script>
+/* ════════════════════════════════════════════════════════════════════
+   ONLINE NETWORKING LAYER  —  PeerJS WebRTC P2P
+   ════════════════════════════════════════════════════════════════════
+   Architecture:
+   • Host   = Player 1 (red). Runs authoritative physics. Sends ball state.
+   • Guest  = Player 2 (blue). Receives ball state. Sends only paddle pos.
+   • Both send their own paddle position ~30fps.
+   • Host broadcasts: ball (20Hz), hits, bounces, net, point, serve, score.
+   • Guest sends: paddle only. Physics/hits are read-only for guest.
+   ════════════════════════════════════════════════════════════════════ */
+'use strict';
+
+var netMode   = 'offline';
+var isHost    = false;
+var myPeer    = null;
+var netConn   = null;
+var roomCode  = '';
+var rematchReady = 0;
+
+/* ── Player names ── */
+var myName   = 'Player 1';   /* set from input before hosting/joining */
+var oppName  = 'Opponent';   /* received from opponent after connection */
+
+function getMyName(){
+  var inp=document.getElementById('input-myname');
+  var v=inp?inp.value.trim():'';
+  if(v.length>0) return v;
+  return netMode==='online' ? (isHost?'Player 1':'Player 2') : 'Player';
+}
+
+function applyNames(){
+  document.getElementById('lbl-you').textContent  = myName;
+  document.getElementById('lbl-opp').textContent  = oppName;
+  /* Update serve indicator labels immediately */
+  document.getElementById('servelbl').textContent =
+    server==='player' ? myName+' Serve' : oppName+' Serve';
+}
+
+
+function netSend(obj){
+  if(netConn&&netConn.open){ try{netConn.send(obj);}catch(e){} }
+}
+
+function netDisconnect(){
+  try{if(netConn)netConn.close();}catch(e){}
+  try{if(myPeer)myPeer.destroy();}catch(e){}
+  netConn=null;myPeer=null;netMode='offline';isHost=false;roomCode='';
+}
+
+/* ── Opponent paddle ── */
+var oppTargetX=0, oppTargetZ=-2.0, netPingMs=0;
+
+function netReceive(msg){
+  if(!msg||!msg.t)return;
+  switch(msg.t){
+
+    case 'name':
+      oppName = msg.name || 'Opponent';
+      applyNames();
+      break;
+
+    case 'paddle':
+      /* Simple world-coord flip: opponent's +z becomes our -z */
+      oppTargetX = clamp(-msg.x, -HW*1.6, HW*1.6);
+      oppTargetZ = clamp(-msg.z, OPP_Z_MIN, OPP_Z_MAX);
+      break;
+
+    case 'ball':
+      /* Guest applies host's authoritative ball state — flip X and Z */
+      if(!isHost){
+        bx  = -msg.x;  by  =  msg.y;  bz  = -msg.z;
+        bvx = -msg.vx; bvy =  msg.vy; bvz = -msg.vz;
+        bsx = -msg.sx; bsz = -msg.sz;
+        bLive = !!msg.live;
+        bWait = !!msg.wait;
+        /* Flip hitter perspective: host's 'player' = guest's 'ai' and vice versa */
+        if(msg.hitter==='player') hitter='ai';
+        else if(msg.hitter==='ai') hitter='player';
+        else hitter=null;
+        /* When waiting for serve, keep ball glued to correct paddle */
+        if(bWait){
+          if(server==='player'){ bx=pPos.x; bz=pPos.z; by=pPos.y+0.10; }
+          else                 { bx=aPos.x; bz=aPos.z; by=aPos.y+0.10; }
+        }
+      }
+      break;
+
+    case 'hit':
+      /* Sound/flash for guest when host (opponent) hits */
+      if(!isHost){ playHit(false); hitFlash('ai'); }
+      break;
+
+    case 'bounce':
+      if(!isHost){ playBounce(msg.v||3); doRipple(); flashTable(); }
+      break;
+
+    case 'net':
+      if(!isHost){ playNet(); showToast('Net!'); }
+      break;
+
+    case 'serve':
+      if(!isHost){
+        /* Flip: host's 'player' serve = guest's 'ai' serve */
+        var sWho=(msg.who==='player')?'ai':'player';
+        bWait=false; bLive=true; hitter=sWho;
+        bounces=0; lastBounceHalf=null; bounceCount=0;
+      }
+      break;
+
+    case 'point':
+      if(!isHost){
+        /* Flip perspective: host's winner 'player' = bad for guest (opponent scored) */
+        var w=(msg.winner==='player')?'ai':'player';
+        if(w==='player'){
+          pScore++; document.getElementById('ps').textContent=pScore;
+          showToast('Point!'); playScore(true); showCelebration(true);
+        } else {
+          aScore++; document.getElementById('as').textContent=aScore;
+          playScore(false); showCelebration(false);
+        }
+        srvCnt++; if(srvCnt>=2){srvCnt=0;server=server==='player'?'ai':'player';}
+        document.getElementById('servelbl').textContent=server==='player'?myName+' Serve':oppName+' Serve';
+        var w2=Math.max(pScore,aScore)>=WIN&&Math.abs(pScore-aScore)>=2;
+        if(w2) endGame(pScore>aScore?'player':'ai');
+      }
+      break;
+
+    case 'ping':
+      netSend({t:'pong',ts:msg.ts});
+      break;
+
+    case 'pong':
+      netPingMs=Date.now()-msg.ts;
+      document.getElementById('minfo').textContent='Ping '+netPingMs+'ms';
+      setTimeout(function(){if(gstate==='play')document.getElementById('minfo').textContent='First to 11';},2000);
+      break;
+
+    case 'rematch':
+      rematchReady++;
+      if(rematchReady>=2){rematchReady=0;startGame();}
+      else showToast('Opp. wants rematch!');
+      break;
+
+    case 'bye':
+      netShowDisconnect();
+      break;
+  }
+}
+
+function netShowDisconnect(){
+  stopBGM(); gstate='menu';
+  showToast('Opponent disconnected');
+  setTimeout(function(){showScreen('smenu');},2000);
+}
+
+/* ── Ball broadcast (host → guest, ~20 Hz) ── */
+var _nbt=0;
+function netTickHost(dt){
+  if(!isHost||netMode!=='online'||!netConn||!netConn.open)return;
+  _nbt+=dt;
+  if(_nbt<0.050)return;
+  _nbt=0;
+  /* Send raw host-frame coordinates — guest will flip them in netReceive */
+  netSend({t:'ball',x:bx,y:by,z:bz,vx:bvx,vy:bvy,vz:bvz,sx:bsx,sz:bsz,
+           live:bLive,wait:bWait,hitter:hitter||''});
+}
+
+/* ── Paddle broadcast (both, ~30 Hz) ── */
+var _npt=0;
+function netTickPaddle(dt){
+  if(netMode!=='online'||!netConn||!netConn.open)return;
+  _npt+=dt;
+  if(_npt<0.033)return;
+  _npt=0;
+  netSend({t:'paddle',
+    x: clamp(pPos.x, -HW*1.6, HW*1.6),
+    z: clamp(pPos.z, P_ZONE_Z_MIN, P_ZONE_Z_MAX)
+  });
+}
+
+/* ── Ping (host only, every 2s) ── */
+var _nping=0;
+function netTickPing(dt){
+  if(!isHost||netMode!=='online'||!netConn||!netConn.open)return;
+  _nping+=dt;
+  if(_nping<2)return;
+  _nping=0;
+  netSend({t:'ping',ts:Date.now()});
+}
+
+/* ── Opponent paddle: smooth lerp to received world position ── */
+/* ── Opponent paddle animation state ── */
+var oppSmoothVX = 0;       /* smoothed X velocity of opponent paddle */
+var oppIdleT    = 0;       /* time accumulator for idle sway          */
+var oppPrevX    = 0;       /* previous aPos.x for velocity calc       */
+
+function updateOppPaddle(dt){
+  if(netMode!=='online')return;
+
+  /* ── X: fast snap for responsive lateral movement ── */
+  var kX = Math.min(28*dt, 1);
+  /* ── Z: slower, smoother back-forth depth movement ── */
+  var kZ = Math.min(20*dt, 1);
+
+  var prevX = aPos.x;
+  aPos.x += (clamp(oppTargetX,-HW*1.6,HW*1.6) - aPos.x)*kX;
+  aPos.z += (clamp(oppTargetZ,OPP_Z_MIN,OPP_Z_MAX) - aPos.z)*kZ;
+  aPos.y  = 0.14;
+  aPos.x  = clamp(aPos.x, -HW*1.6, HW*1.6);
+  aPos.z  = clamp(aPos.z, OPP_Z_MIN, OPP_Z_MAX);
+
+  /* Velocity tracking */
+  var velX = (aPos.x - prevX) / Math.max(dt, 0.001);
+  var vs   = clamp(18*dt, 0, 1);
+  oppSmoothVX += (velX - oppSmoothVX) * vs;
+  oppIdleT += dt;
+
+  /* ── Layer 1: Lateral lean — amplified for more expressive left/right tilt ── */
+  var leanZ = clamp(oppSmoothVX * 0.85, -1.05, 1.05);
+
+  /* ── Layer 2: Ball-chase reach ── */
+  var reachZ = 0, reachX = 0;
+  if(bLive && bz < 0){
+    var ballOffX = bx - aPos.x;
+    reachZ = clamp(ballOffX * 0.90, -0.85, 0.85);
+    var approachDist = Math.abs(bz - aPos.z);
+    var incoming = (bvz < 0) ? 1.0 : 0.0;
+    reachX = clamp((1.8 - approachDist) * 0.6, 0, 1) * incoming * 0.65;
+  }
+
+  /* ── Layer 3: Strike swing ── */
+  aSwing = Math.max(0, aSwing - dt * 4.8);
+  var strikeX = aSwing * 0.85;
+  var strikeZ = aSwing * clamp(oppSmoothVX * 0.28, -0.55, 0.55);
+
+  /* ── Layer 4: Idle sway — bigger amplitude so bat is never still ── */
+  var idleAmt = bLive ? 0.65 : 1.2;
+  var idleZ = (Math.sin(oppIdleT*2.2)*0.14 + Math.sin(oppIdleT*0.75+0.8)*0.09) * idleAmt;
+  var idleX = (Math.sin(oppIdleT*1.6+2.0)*0.08 + Math.sin(oppIdleT*0.55+1.4)*0.05) * idleAmt;
+
+  /* ── Layer 5: Depth-sway — slow sinusoidal back-forth in Z (visual depth motion) ── */
+  /* This gives the bat natural forward-back movement even when opponent isn't moving */
+  var depthSway = (Math.sin(oppIdleT * 3.2 + 1.2) * 0.60 + Math.sin(oppIdleT * 1.8 + 0.5) * 0.32) * (bLive ? 0.8 : 1.0);
+  var depthOY   = depthSway * 45;  /* screen offset up/down from depth illusion */
+
+  /* ── Layer 6: Y-dip when ball is low ── */
+  var dipX = 0;
+  if(bLive && bz < 0){
+    dipX = clamp(1.0 - (by - BR) * 3.5, 0, 1) * 0.45;
+  }
+
+  /* Blend layers — wider tilt range for more expressiveness */
+  var tATZ = clamp(leanZ + reachZ + strikeZ + idleZ, -1.20, 1.20);
+  var tATX = clamp(reachX + strikeX + idleX + dipX, -0.95, 0.95);
+  var atS  = clamp(18*dt, 0, 1);
+  aPadTiltZ += (tATZ - aPadTiltZ) * atS;
+  aPadTiltX += (tATX - aPadTiltX) * atS;
+
+  /* Screen offset — more lateral swing for expressive feel */
+  var tAOX = clamp(-oppSmoothVX * 22.0, -72, 72);
+  if(bLive && bz < 0) tAOX += clamp((bx - aPos.x) * 22, -40, 40);
+  var tAOY = clamp(-aSwing * 30, -45, 0) + depthOY;
+  var aOS  = clamp(18*dt, 0, 1);
+  aPadOX += (tAOX - aPadOX) * aOS;
+  aPadOY += (tAOY - aPadOY) * aOS;
+}
+
+
+/* ── Override AI with online updates ── */
+var _aiOrig=updateAI;
+updateAI=function(dt){
+  if(netMode==='online'){
+    updateOppPaddle(dt);
+    netTickHost(dt);
+    netTickPaddle(dt);
+    netTickPing(dt);
+    return;
+  }
+  _aiOrig(dt);
+};
+
+/* ── Block guest physics ── */
+var _phyOrig=physicsStep;
+physicsStep=function(){
+  if(netMode==='online'&&!isHost)return;
+  _phyOrig();
+};
+var _hitOrig=checkHits;
+checkHits=function(){
+  if(netMode==='online'&&!isHost)return;
+  _hitOrig();
+};
+
+/* ── Intercept hit/bounce/net/point to broadcast ── */
+var _doHitOrig=doHit;
+doHit=function(who){
+  _doHitOrig(who);
+  if(netMode==='online'&&isHost) netSend({t:'hit'});
+};
+var _bnOrig=playBounce;
+playBounce=function(v){
+  _bnOrig(v);
+  if(netMode==='online'&&isHost) netSend({t:'bounce',v:v});
+};
+var _netSoundOrig=playNet;
+playNet=function(){
+  _netSoundOrig();
+  if(netMode==='online'&&isHost) netSend({t:'net'});
+};
+var _apOrig=awardPoint;
+awardPoint=function(winner,msg,delay){
+  if(netMode==='online'&&isHost) netSend({t:'point',winner:winner});
+  _apOrig(winner,msg,delay);
+};
+
+/* ══════════════════════════════════════════════════════════════════
+   SHORT CODE SYSTEM
+   ══════════════════════════════════════════════════════════════════
+   How it works:
+   1. Host generates a random 6-digit number: e.g. "483921"
+   2. Host registers on PeerJS server with ID = "ttgame-483921"
+   3. Guest types "483921" → we connect to "ttgame-483921"
+   4. Simple, shareable by voice, SMS, WhatsApp — no copy-paste needed
+   ══════════════════════════════════════════════════════════════════ */
+
+var PEER_PREFIX = 'ttgame-';   /* namespace prefix so IDs don't collide */
+
+var ICE_CFG = {config:{iceServers:[
+  {urls:'stun:stun.l.google.com:19302'},
+  {urls:'stun:stun1.l.google.com:19302'},
+  {urls:'stun:stun2.l.google.com:19302'},
+  {urls:'turn:global.relay.metered.ca:80',username:'openrelayproject',credential:'openrelayproject'},
+  {urls:'turn:global.relay.metered.ca:443',username:'openrelayproject',credential:'openrelayproject'},
+  {urls:'turn:global.relay.metered.ca:443?transport=tcp',username:'openrelayproject',credential:'openrelayproject'}
+]}};
+
+function gen6(){
+  /* 6-digit numeric code: 100000–999999 */
+  return String(Math.floor(100000+Math.random()*900000));
+}
+
+function wireConn(conn){
+  netConn=conn;
+  conn.on('open',function(){
+    var ls=document.getElementById('lobby-status');
+    if(ls){ls.textContent='Connected! Starting game…';ls.style.color='#00e676';}
+    /* Send our name to opponent immediately */
+    myName=getMyName();
+    netSend({t:'name',name:myName});
+    setTimeout(function(){ netMode='online'; startGame(); },900);
+  });
+  conn.on('data',netReceive);
+  conn.on('close',function(){ if(gstate==='play') netShowDisconnect(); });
+  conn.on('error',function(e){ showToast('Connection error'); console.warn(e); });
+}
+
+/* ── Shared name validation ── */
+function validateName(){
+  var inp = document.getElementById('input-myname');
+  var name = inp ? inp.value.trim() : '';
+  if(name.length > 0) return true;
+  if(inp){
+    inp.style.border = '2px solid #ff4444';
+    inp.style.boxShadow = '0 0 12px rgba(255,60,60,0.6)';
+    inp.placeholder = 'Enter your name!';
+    inp.focus();
+    var s=0;
+    var shk = setInterval(function(){
+      s++;
+      inp.style.transform = s%2===0 ? 'translateX(-6px)' : 'translateX(6px)';
+      if(s>=6){ clearInterval(shk); inp.style.transform=''; }
+    }, 55);
+    inp.addEventListener('input', function _reset(){
+      inp.style.border=''; inp.style.boxShadow='';
+      inp.placeholder='Enter your name';
+      inp.removeEventListener('input', _reset);
+    });
+  }
+  return false;
+}
+
+/* ── HOST ── */
+function hostGame(){
+  if(!validateName()) return;
+  showScreen('slobby');
+  document.getElementById('room-code-display').textContent='…';
+  document.getElementById('lobby-title').textContent='Host Game';
+  document.getElementById('lobby-sub').textContent='Tell your opponent this code';
+  document.getElementById('lobby-status').textContent='Generating code…';
+  document.getElementById('lobby-status').style.color='';
+  document.getElementById('lobby-ping').textContent='';
+  isHost=true;
+  myName=getMyName();
+  oppName='Opponent'; /* reset until received */
+
+  var code=gen6();
+  roomCode=code;
+
+  /* Register on PeerJS server with our prefixed short code as the ID */
+  myPeer=new Peer(PEER_PREFIX+code, ICE_CFG);
+
+  myPeer.on('open',function(){
+    /* Success — show the 6-digit code */
+    document.getElementById('room-code-display').textContent=code;
+    document.getElementById('lobby-status').textContent='Waiting for opponent…';
+    setNetStatus('Hosting — ready');
+  });
+
+  myPeer.on('connection',function(conn){
+    document.getElementById('lobby-status').textContent='Opponent connecting…';
+    wireConn(conn);
+  });
+
+  myPeer.on('error',function(e){
+    if(e.type==='unavailable-id'){
+      /* Code collision — extremely rare, auto-retry with a new code */
+      myPeer.destroy();
+      hostGame();
+      return;
+    }
+    document.getElementById('lobby-status').textContent='Error: '+e.type+'. Tap Cancel and try again.';
+    document.getElementById('lobby-status').style.color='#ff4455';
+    document.getElementById('room-code-display').textContent='—';
+    setNetStatus('Error — retry');
+  });
+}
+
+/* ── JOIN ── */
+function joinGame(rawCode){
+  if(!validateName()) return;
+  var code=rawCode.trim().replace(/\D/g,''); /* digits only */
+  var errEl=document.getElementById('join-error');
+  if(code.length!==6){
+    if(errEl)errEl.textContent='Enter the 6-digit code shown on your opponent\'s screen';
+    return;
+  }
+  if(errEl)errEl.textContent='';
+
+  showScreen('slobby');
+  document.getElementById('room-code-display').textContent=code;
+  document.getElementById('lobby-title').textContent='Joining…';
+  document.getElementById('lobby-sub').textContent='Connecting to host';
+  document.getElementById('lobby-status').textContent='Connecting…';
+  document.getElementById('lobby-status').style.color='';
+  isHost=false; roomCode=code;
+  myName=getMyName();
+  oppName='Opponent'; /* reset until received */
+
+  /* Guest gets their own random peer ID (no custom ID needed) */
+  myPeer=new Peer(ICE_CFG);
+
+  myPeer.on('open',function(){
+    var conn=myPeer.connect(PEER_PREFIX+code,{reliable:true,serialization:'json'});
+    wireConn(conn);
+
+    /* Timeout fallback */
+    setTimeout(function(){
+      if(netMode!=='online'&&gstate!=='play'){
+        var ls=document.getElementById('lobby-status');
+        if(ls&&ls.style.color!=='rgb(0, 230, 118)'){ /* not already connected green */
+          ls.textContent='No host found for code '+code+'. Ask them to re-host.';
+          ls.style.color='#ff4455';
+        }
+      }
+    },16000);
+  });
+
+  myPeer.on('error',function(e){
+    var ls=document.getElementById('lobby-status');
+    var msg=e.type==='peer-unavailable'
+      ? 'Code '+code+' not found. Check the number and try again.'
+      : 'Error: '+e.type+'. Try again.';
+    if(ls){ls.textContent=msg;ls.style.color='#ff4455';}
+  });
+}
+
+/* ── Show/hide screens ── */
+function showScreen(id){
+  ['smenu','sjoin','slobby','sresult'].forEach(function(s){
+    document.getElementById(s).classList.toggle('hide',s!==id);
+  });
+}
+
+function setNetStatus(msg){
+  var el=document.getElementById('net-status');
+  if(el) el.textContent=msg;
+}
+
+/* ── Button wiring ── */
+document.getElementById('btn-host').addEventListener('click',function(){ initAudio(); hostGame(); });
+
+document.getElementById('btn-join-open').addEventListener('click',function(){
+  if(!validateName()) return;
+  showScreen('sjoin');
+  setTimeout(function(){
+    var inp=document.getElementById('join-code-input');
+    if(inp)inp.focus();
+  },200);
+});
+document.getElementById('btn-join-confirm').addEventListener('click',function(){
+  initAudio(); joinGame(document.getElementById('join-code-input').value);
+});
+document.getElementById('join-code-input').addEventListener('keydown',function(e){
+  if(e.key==='Enter'){ initAudio(); joinGame(this.value); }
+  document.getElementById('join-error').textContent='';
+});
+document.getElementById('btn-join-back').addEventListener('click',function(){ showScreen('smenu'); });
+
+document.getElementById('btn-copy-code').addEventListener('click',function(){
+  var code=roomCode;
+  if(!code||code==='···'||code==='—'){showToast('No code yet…');return;}
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(code).then(function(){
+      document.getElementById('btn-copy-code').textContent='✅ Copied!';
+      setTimeout(function(){document.getElementById('btn-copy-code').textContent='📋 Copy';},1800);
+    }).catch(function(){ _fallbackCopy(code); });
+  } else { _fallbackCopy(code); }
+});
+function _fallbackCopy(text){
+  var ta=document.createElement('textarea');
+  ta.value=text;ta.style.cssText='position:fixed;opacity:0;top:0;left:0;';
+  document.body.appendChild(ta);ta.focus();ta.select();
+  try{document.execCommand('copy');document.getElementById('btn-copy-code').textContent='✅ Copied!';}
+  catch(e){showToast(text);}
+  document.body.removeChild(ta);
+  setTimeout(function(){document.getElementById('btn-copy-code').textContent='📋 Copy';},1800);
+}
+
+document.getElementById('btn-lobby-cancel').addEventListener('click',function(){
+  netDisconnect(); showScreen('smenu');
+});
+
+document.getElementById('brematch').addEventListener('click',function(){
+  if(netMode==='online'){ rematchReady++; netSend({t:'rematch'}); if(rematchReady>=2){rematchReady=0;startGame();}else showToast('Waiting for opponent…'); }
+  else startGame();
+});
+
+document.getElementById('btn-vs-cpu').addEventListener('click',function(){
+  initAudio();
+  if(!validateName()) return;
+  netMode='offline'; isHost=false; startGame();
+});
+
+document.getElementById('bmenu').addEventListener('click',function(){
+  stopBGM();
+  if(netMode==='online') netSend({t:'bye'});
+  netDisconnect();
+  showScreen('smenu'); gstate='menu'; resetBall('player'); updateServeBtn();
+  /* Show banner ad on main menu */
+  admobShowBanner();
+});
+
+/* ── Patch startGame for online mode ── */
+var _sgOrig=startGame;
+startGame=function(){
+  pScore=0;aScore=0;srvCnt=0;totalPointsScored=0;rematchReady=0;
+  document.getElementById('ps').textContent='0';
+  document.getElementById('as').textContent='0';
+
+  /* ── PERSPECTIVE SETUP ──────────────────────────────────────────────
+   * Host   = 'player' side → near side (z > 0), red paddle, serves first
+   * Guest  = sees themselves as 'player' too (near side z > 0), red paddle
+   *          but their 'ai' opponent (the host) appears on far side (z < 0)
+   *
+   * Table layout from each player's view:
+   *   pPos  = YOU        → always z > 0  (bottom of screen / near)
+   *   aPos  = OPPONENT   → always z < 0  (top of screen / far)
+   *
+   * Host's physics coordinates:   host pPos z>0, aPos z<0
+   * Guest receives ball flipped:  host z>0 → guest sees z<0 (far = opp)
+   *                               host z<0 → guest sees z>0 (near = self)
+   * ────────────────────────────────────────────────────────────────── */
+  if(netMode==='online'){
+    server = isHost ? 'player' : 'ai';
+    pPos.x=0; pPos.y=0.14; pPos.z= HL*0.5;
+    aPos.x=0; aPos.y=0.14; aPos.z=-HL*0.5;
+    oppTargetX=0; oppTargetZ=-HL*0.5;
+    oppSmoothVX=0; oppIdleT=0; oppPrevX=0;
+  } else {
+    server='player';
+    pPos.x=0; pPos.y=0.14; pPos.z= HL*0.5;
+    aPos.x=0; aPos.y=0.14; aPos.z=AI_Z_HOME;
+  }
+
+  /* ── Names ── */
+  if(netMode==='online'){
+    myName=getMyName();
+    /* oppName was already set via 'name' message — keep it */
+  } else {
+    myName=getMyName();
+    oppName='CPU';
+  }
+  document.getElementById('lbl-you').textContent  = myName;
+  document.getElementById('lbl-opp').textContent  = oppName;
+  document.getElementById('servelbl').textContent = server==='player' ? myName+' Serve' : oppName+' Serve';
+  document.getElementById('minfo').textContent='First to 11';
+  ['smenu','sjoin','slobby','sresult'].forEach(function(s){document.getElementById(s).classList.add('hide');});
+  gstate='play'; pointPending=false; resetBall(server); mNX=0; mNY=0.3;
+  fadeInBGM();
+  admobHideBanner();
+  try{ if(window.AdMob) window.AdMob.loadInterstitial(); }catch(e){}
+  if(server==='ai'){
+    setTimeout(function(){
+      if(netMode==='online') netSend({t:'serve',who:'ai'});
+      doServe('ai');
+    },900);
+  }
+  if(isMobile){
+    var th=document.getElementById('touch-hint');
+    th.style.opacity='1'; clearTimeout(thTimer);
+    thTimer=setTimeout(function(){th.style.opacity='0';},2800);
+  }
+  updateServeBtn();
+};
+
+/* ── Also patch doServe to broadcast when host serves ── */
+var _dsOrig=doServe;
+doServe=function(who){
+  _dsOrig(who);
+  if(netMode==='online'&&isHost) netSend({t:'serve',who:who});
+};
+
+/* ── Network ready check ── */
+(function(){
+  setTimeout(function(){
+    if(typeof Peer==='undefined'){
+      setNetStatus('⚠ PeerJS failed to load — check connection');
+      return;
+    }
+    setNetStatus('✓ Ready — Host or Join a game');
+  },1200);
+
+  /* ── AdMob init — called once when page loads ──
+   * Android side should call window.onAdMobReady() after injecting
+   * the AdMob bridge, or we try on a short delay as fallback.       */
+  window.onAdMobReady = function(){
+    admobShowBanner();
+    try{ window.AdMob.loadInterstitial(); }catch(e){}
+    try{ window.AdMob.loadRewarded(); }catch(e){}
+  };
+  /* Fallback: try after 1.5s in case bridge is already available */
+  setTimeout(function(){
+    if(window.AdMob && !window._admobInitDone){
+      window._admobInitDone = true;
+      window.onAdMobReady();
+    }
+  }, 1500);
+})();
+</script>
+</body>
+</html>

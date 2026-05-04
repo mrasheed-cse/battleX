@@ -1,0 +1,125 @@
+<svg width="600" height="380" viewBox="0 0 600 380" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#1a0800"/>
+    <stop offset="50%" stop-color="#3d1a00"/>
+    <stop offset="100%" stop-color="#1a0a00"/>
+  </linearGradient>
+  <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+    <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.18"/>
+    <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+  </radialGradient>
+</defs>
+
+<rect width="600" height="380" fill="url(#bg)"/>
+<circle cx="300" cy="190" r="190" fill="url(#glow)"/>
+
+<!-- Parking lot -->
+<rect x="110" y="75" width="380" height="230" rx="12" fill="#111827" opacity="0.9"/>
+
+<!-- Grid lines -->
+<line x1="110" y1="190" x2="490" y2="190" stroke="#374151" stroke-width="2" stroke-dasharray="8,5"/>
+<line x1="237" y1="75"  x2="237" y2="305" stroke="#374151" stroke-width="2" stroke-dasharray="8,5"/>
+<line x1="364" y1="75"  x2="364" y2="305" stroke="#374151" stroke-width="2" stroke-dasharray="8,5"/>
+
+<!-- EXIT marker -->
+<rect x="458" y="163" width="26" height="54" rx="0" fill="#ef4444" opacity="0.95"/>
+<text x="471" y="197" text-anchor="middle" fill="white" font-family="Arial Black" font-size="8" font-weight="900" transform="rotate(-90,471,197)">EXIT</text>
+<path d="M 484 190 L 504 190" fill="none" stroke="#fbbf24" stroke-width="4" stroke-dasharray="5,3"/>
+<path d="M 500 184 L 509 190 L 500 196" fill="none" stroke="#fbbf24" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- ══════════════════════════════════════════
+     CAR 1 — Red horizontal (top-left cell)
+     Cell: x=110–237, y=75–190  center ~(173,132)
+     Car body: 92w × 42h  wheels: r=9
+════════════════════════════════════════════ -->
+<g transform="translate(127, 111)">
+  <!-- Body -->
+  <rect x="0" y="9" width="92" height="38" rx="9" fill="#ef4444"/>
+  <!-- Window -->
+  <rect x="52" y="12" width="32" height="20" rx="4" fill="rgba(255,210,210,0.55)"/>
+  <!-- Windshield glare -->
+  <rect x="6" y="12" width="42" height="20" rx="4" fill="rgba(255,255,255,0.22)"/>
+  <!-- Wheels — bottom of body is at y=9+38=47, wheel center y=47-1=46, top y=37 -->
+  <circle cx="18" cy="47" r="9" fill="#1f2937" stroke="#6b7280" stroke-width="2"/>
+  <circle cx="18" cy="47" r="4" fill="#374151"/>
+  <circle cx="74" cy="47" r="9" fill="#1f2937" stroke="#6b7280" stroke-width="2"/>
+  <circle cx="74" cy="47" r="4" fill="#374151"/>
+</g>
+
+<!-- Arrow hint for red car -->
+<path d="M 219 132 L 232 132" fill="none" stroke="rgba(251,191,36,0.8)" stroke-width="3" stroke-dasharray="4,3"/>
+<path d="M 229 127 L 237 132 L 229 137" fill="none" stroke="rgba(251,191,36,0.8)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- ══════════════════════════════════════════
+     CAR 2 — Blue horizontal (top-right cell)
+     Cell: x=237–364, y=75–190  center ~(300,132)
+════════════════════════════════════════════ -->
+<g transform="translate(251, 111)">
+  <rect x="0" y="9" width="92" height="38" rx="9" fill="#3b82f6"/>
+  <rect x="52" y="12" width="32" height="20" rx="4" fill="rgba(180,210,255,0.55)"/>
+  <rect x="6" y="12" width="42" height="20" rx="4" fill="rgba(255,255,255,0.22)"/>
+  <circle cx="18" cy="47" r="9" fill="#1f2937" stroke="#6b7280" stroke-width="2"/>
+  <circle cx="18" cy="47" r="4" fill="#374151"/>
+  <circle cx="74" cy="47" r="9" fill="#1f2937" stroke="#6b7280" stroke-width="2"/>
+  <circle cx="74" cy="47" r="4" fill="#374151"/>
+</g>
+
+<!-- ══════════════════════════════════════════
+     CAR 3 — Green vertical (bottom-left cell)
+     Cell: x=110–237, y=190–305  center ~(173,247)
+     Car body: 38w × 90h  wheels: r=9
+════════════════════════════════════════════ -->
+<g transform="translate(154, 200)">
+  <!-- Body — left edge at x=9 -->
+  <rect x="9" y="0" width="38" height="90" rx="9" fill="#22c55e"/>
+  <!-- Window -->
+  <rect x="12" y="52" width="26" height="28" rx="4" fill="rgba(180,255,200,0.45)"/>
+  <!-- Windshield -->
+  <rect x="12" y="8" width="26" height="36" rx="4" fill="rgba(255,255,255,0.22)"/>
+  <!-- Wheels — left of body x=9, right edge x=47 -->
+  <!-- Left wheels at x=9-1=8 center -->
+  <circle cx="8"  cy="18" r="9" fill="#1f2937" stroke="#6b7280" stroke-width="2"/>
+  <circle cx="8"  cy="18" r="4" fill="#374151"/>
+  <circle cx="8"  cy="72" r="9" fill="#1f2937" stroke="#6b7280" stroke-width="2"/>
+  <circle cx="8"  cy="72" r="4" fill="#374151"/>
+  <!-- Right wheels -->
+  <circle cx="48" cy="18" r="9" fill="#1f2937" stroke="#6b7280" stroke-width="2"/>
+  <circle cx="48" cy="18" r="4" fill="#374151"/>
+  <circle cx="48" cy="72" r="9" fill="#1f2937" stroke="#6b7280" stroke-width="2"/>
+  <circle cx="48" cy="72" r="4" fill="#374151"/>
+</g>
+
+<!-- ══════════════════════════════════════════
+     CAR 4 — Yellow horizontal (bottom-center)
+     Cell: x=237–364, y=190–305  center ~(300,247)
+════════════════════════════════════════════ -->
+<g transform="translate(251, 226)">
+  <rect x="0" y="9" width="92" height="38" rx="9" fill="#fbbf24"/>
+  <rect x="52" y="12" width="32" height="20" rx="4" fill="rgba(255,245,180,0.55)"/>
+  <rect x="6" y="12" width="42" height="20" rx="4" fill="rgba(255,255,255,0.22)"/>
+  <circle cx="18" cy="47" r="9" fill="#1f2937" stroke="#6b7280" stroke-width="2"/>
+  <circle cx="18" cy="47" r="4" fill="#374151"/>
+  <circle cx="74" cy="47" r="9" fill="#1f2937" stroke="#6b7280" stroke-width="2"/>
+  <circle cx="74" cy="47" r="4" fill="#374151"/>
+</g>
+
+<!-- ══════════════════════════════════════════
+     CAR 5 — Purple vertical (bottom-right cell)
+     Cell: x=364–458, y=190–305  center ~(411,247)
+════════════════════════════════════════════ -->
+<g transform="translate(392, 200)">
+  <rect x="9" y="0" width="38" height="90" rx="9" fill="#a855f7"/>
+  <rect x="12" y="52" width="26" height="28" rx="4" fill="rgba(220,180,255,0.45)"/>
+  <rect x="12" y="8" width="26" height="36" rx="4" fill="rgba(255,255,255,0.22)"/>
+  <circle cx="8"  cy="18" r="9" fill="#1f2937" stroke="#6b7280" stroke-width="2"/>
+  <circle cx="8"  cy="18" r="4" fill="#374151"/>
+  <circle cx="8"  cy="72" r="9" fill="#1f2937" stroke="#6b7280" stroke-width="2"/>
+  <circle cx="8"  cy="72" r="4" fill="#374151"/>
+  <circle cx="48" cy="18" r="9" fill="#1f2937" stroke="#6b7280" stroke-width="2"/>
+  <circle cx="48" cy="18" r="4" fill="#374151"/>
+  <circle cx="48" cy="72" r="9" fill="#1f2937" stroke="#6b7280" stroke-width="2"/>
+  <circle cx="48" cy="72" r="4" fill="#374151"/>
+</g>
+
+</svg>

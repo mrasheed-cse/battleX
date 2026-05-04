@@ -1,0 +1,101 @@
+<svg width="600" height="380" viewBox="0 0 600 380" xmlns="http://www.w3.org/2000/svg">
+<defs>
+  <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#0a1a08"/>
+    <stop offset="50%" stop-color="#1a3a10"/>
+    <stop offset="100%" stop-color="#2a1a00"/>
+  </linearGradient>
+  <linearGradient id="snake-body" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#22c55e"/>
+    <stop offset="100%" stop-color="#15803d"/>
+  </linearGradient>
+  <linearGradient id="ladder-gold" x1="0" y1="0" x2="1" y2="0">
+    <stop offset="0%" stop-color="#fbbf24"/>
+    <stop offset="100%" stop-color="#d97706"/>
+  </linearGradient>
+  <linearGradient id="head-grad" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0%" stop-color="#4ade80"/>
+    <stop offset="100%" stop-color="#16a34a"/>
+  </linearGradient>
+</defs>
+
+<rect width="600" height="380" fill="url(#bg)"/>
+
+<!-- Subtle glow circles -->
+<circle cx="300" cy="190" r="170" fill="#16a34a" opacity="0.07"/>
+<circle cx="300" cy="190" r="110" fill="#22c55e" opacity="0.05"/>
+
+<!-- ── LADDER ── tall golden ladder center-left -->
+<!-- Left rail -->
+<rect x="188" y="60" width="14" height="260" rx="7" fill="url(#ladder-gold)"/>
+<!-- Right rail -->
+<rect x="258" y="60" width="14" height="260" rx="7" fill="url(#ladder-gold)"/>
+<!-- Rungs -->
+<rect x="188" y="90"  width="84" height="12" rx="6" fill="#fde68a"/>
+<rect x="188" y="128" width="84" height="12" rx="6" fill="#fde68a"/>
+<rect x="188" y="166" width="84" height="12" rx="6" fill="#fde68a"/>
+<rect x="188" y="204" width="84" height="12" rx="6" fill="#fde68a"/>
+<rect x="188" y="242" width="84" height="12" rx="6" fill="#fde68a"/>
+<rect x="188" y="280" width="84" height="12" rx="6" fill="#fde68a"/>
+<!-- Ladder top cap -->
+<rect x="182" y="54" width="26" height="10" rx="5" fill="#fbbf24"/>
+<rect x="252" y="54" width="26" height="10" rx="5" fill="#fbbf24"/>
+
+<!-- ── SNAKE ── winding around the ladder -->
+<!-- Snake body — thick winding path -->
+<path d="M 330 300
+         Q 370 300 390 270
+         Q 420 230 390 195
+         Q 360 160 320 175
+         Q 275 192 270 155
+         Q 265 115 300 95
+         Q 335 75 355 90"
+      fill="none" stroke="url(#snake-body)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round" opacity="0.95"/>
+<!-- Snake body highlight -->
+<path d="M 330 300
+         Q 370 300 390 270
+         Q 420 230 390 195
+         Q 360 160 320 175
+         Q 275 192 270 155
+         Q 265 115 300 95
+         Q 335 75 355 90"
+      fill="none" stroke="#4ade80" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
+<!-- Snake scale pattern dots -->
+<circle cx="360" cy="292" r="5" fill="#15803d" opacity="0.7"/>
+<circle cx="385" cy="272" r="5" fill="#15803d" opacity="0.7"/>
+<circle cx="400" cy="245" r="5" fill="#15803d" opacity="0.7"/>
+<circle cx="395" cy="215" r="5" fill="#15803d" opacity="0.7"/>
+<circle cx="375" cy="188" r="5" fill="#15803d" opacity="0.7"/>
+<circle cx="345" cy="172" r="5" fill="#15803d" opacity="0.7"/>
+<circle cx="310" cy="172" r="5" fill="#15803d" opacity="0.7"/>
+<circle cx="280" cy="182" r="5" fill="#15803d" opacity="0.7"/>
+<circle cx="268" cy="160" r="5" fill="#15803d" opacity="0.7"/>
+<circle cx="270" cy="130" r="5" fill="#15803d" opacity="0.7"/>
+<circle cx="285" cy="108" r="5" fill="#15803d" opacity="0.7"/>
+<circle cx="310" cy="94" r="5" fill="#15803d" opacity="0.7"/>
+
+<!-- Snake head -->
+<ellipse cx="365" cy="84" rx="28" ry="22" fill="url(#head-grad)"/>
+<ellipse cx="365" cy="84" rx="22" ry="16" fill="#4ade80" opacity="0.5"/>
+<!-- Eyes -->
+<circle cx="356" cy="78" r="7" fill="white"/>
+<circle cx="376" cy="78" r="7" fill="white"/>
+<circle cx="358" cy="79" r="4" fill="#111"/>
+<circle cx="378" cy="79" r="4" fill="#111"/>
+<!-- Eye shine -->
+<circle cx="360" cy="77" r="1.5" fill="white"/>
+<circle cx="380" cy="77" r="1.5" fill="white"/>
+<!-- Forked tongue -->
+<path d="M 365 100 L 365 114 L 358 122 M 365 114 L 372 122"
+      fill="none" stroke="#ef4444" stroke-width="3.5" stroke-linecap="round"/>
+<!-- Snake nostril dots -->
+<circle cx="356" cy="86" r="2.5" fill="#15803d"/>
+<circle cx="374" cy="86" r="2.5" fill="#15803d"/>
+
+<!-- Snake tail curl -->
+<path d="M 330 300 Q 310 310 302 302 Q 294 292 305 285 Q 316 278 318 288"
+      fill="none" stroke="#16a34a" stroke-width="18" stroke-linecap="round"/>
+<path d="M 330 300 Q 310 310 302 302 Q 294 292 305 285 Q 316 278 318 288"
+      fill="none" stroke="#4ade80" stroke-width="8" stroke-linecap="round" opacity="0.3"/>
+
+</svg>
