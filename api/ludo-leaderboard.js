@@ -101,11 +101,11 @@ export default async function handler(req, res) {
         matchMap[mid].players.push({
           id:          e.id,
           match_id:    mid,
-          player_name: e.playerName,
-          position:    e.position,
-          color:       e.color,
-          points:      POINTS_MAP[e.position] || 10,
-          duration_ms: (e.durationSecs||0) * 1000,
+          player_name: e.playerName || e.player_name || 'Unknown',
+          position:    e.position || 0,
+          color:       e.color || null,
+          points:      e.points || POINTS_MAP[e.position] || 10,
+          duration_ms: e.durationMs || e.duration_ms || (e.durationSecs||0)*1000,
           played_at:   e.playedAt,
         })
       })
