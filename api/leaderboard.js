@@ -5,7 +5,7 @@
  * GET  /api/leaderboard?view=player&playerName=X&game=parking-jam
  */
 
-const GAME_SVC = 'http://46.225.58.8:5003'
+const GAME_SVC = 'http://46.225.58.8:5000'
 const CORS = {
   'Access-Control-Allow-Origin':  '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
