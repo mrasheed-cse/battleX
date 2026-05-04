@@ -93,8 +93,15 @@ export default async function handler(req, res) {
         : raw
 
       if (view === 'rankings') {
+        // Deduplicate: keep only one entry per player per match (highest id)
+        const seen = {}
+        const deduped = entries.filter(e => {
+          const key = `${e.matchId||e.match_id}__${e.playerName}`
+          if (!seen[key] || e.id > seen[key]) { seen[key] = e.id; return true }
+          return false
+        })
         const map = {}
-        entries.forEach(e => {
+        deduped.forEach(e => {
           const name = e.playerName || e.player_name
           if (!name || name === '...') return
           if (!map[name]) map[name] = {
@@ -129,24 +136,29 @@ export default async function handler(req, res) {
           played_at:     e.playedAt || e.played_at,
           total_players: e.totalPlayers || 0,
           duration_ms:   (e.durationSecs||0)*1000,
-          players:       [],
+          players:       {},   // keyed by position to deduplicate
         }
-        matchMap[mid].players.push({
-          id:          e.id,
-          match_id:    mid,
-          player_name: e.playerName || 'Unknown',
-          position:    e.position   || 0,
-          color:       e.color      || null,
-          points:      POINTS_MAP[e.position] || 10,
-          duration_ms: (e.durationSecs||0)*1000,
-          played_at:   e.playedAt   || e.played_at,
-        })
+        const pos = e.position || 0
+        // Only keep latest entry per position (highest id = latest)
+        const existing = matchMap[mid].players[pos]
+        if (!existing || (e.id > existing.id)) {
+          matchMap[mid].players[pos] = {
+            id:          e.id,
+            match_id:    mid,
+            player_name: e.playerName || 'Unknown',
+            position:    pos,
+            color:       e.color      || null,
+            points:      POINTS_MAP[pos] || 10,
+            duration_ms: (e.durationSecs||0)*1000,
+            played_at:   e.playedAt   || e.played_at,
+          }
+        }
       })
 
       const matches = Object.values(matchMap)
         .sort((a,b) => new Date(b.played_at)-new Date(a.played_at))
         .slice(0, lim)
-        .map(m => ({ ...m, players: m.players.sort((a,b) => a.position-b.position) }))
+        .map(m => ({ ...m, players: Object.values(m.players).sort((a,b) => a.position-b.position) }))
       return res.status(200).json({ matches })
     }
 
