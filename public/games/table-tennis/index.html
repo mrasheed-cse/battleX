@@ -1896,13 +1896,16 @@ var roomCode  = '';
 var rematchReady = 0;
 
 /* ── Player names ── */
-var myName   = 'Player 1';   /* set from input before hosting/joining */
+var myName   = localStorage.getItem('username') || localStorage.getItem('bx_username') || 'Player 1';   /* set from input before hosting/joining */
 var oppName  = 'Opponent';   /* received from opponent after connection */
 
 function getMyName(){
   var inp=document.getElementById('input-myname');
   var v=inp?inp.value.trim():'';
   if(v.length>0) return v;
+  // Use BattleX logged-in username if available
+  var bxUser = localStorage.getItem('username') || localStorage.getItem('bx_username');
+  if(bxUser) return bxUser;
   return netMode==='online' ? (isHost?'Player 1':'Player 2') : 'Player';
 }
 

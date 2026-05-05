@@ -295,23 +295,27 @@ export default function GamePlay() {
     // Table Tennis score submission
     if (data.type === 'TABLE_TENNIS_SCORE') {
       try {
+        const token = localStorage.getItem('token')
+        const headers = { 'Content-Type': 'application/json' }
+        if (token) headers['Authorization'] = `Bearer ${token}`
         const res = await fetch('/api/table-tennis-leaderboard', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
+          headers,
           body: JSON.stringify({
-            playerName:    data.playerName,
-            opponentName:  data.opponentName,
-            opponentType:  data.opponentType,
-            playerScore:   data.playerScore,
-            opponentScore: data.opponentScore,
-            won:           data.won,
-            durationMs:    data.durationMs,
-            timesPlayed:   data.timesPlayed,
-            totalPoints:   data.totalPoints,
+            playerName:    data.playerName    || localStorage.getItem('username') || 'Player',
+            opponentName:  data.opponentName  || 'CPU',
+            opponentType:  data.opponentType  || 'cpu',
+            playerScore:   data.playerScore   || 0,
+            opponentScore: data.opponentScore || 0,
+            won:           Boolean(data.won),
+            durationMs:    data.durationMs    || 0,
+            timesPlayed:   data.timesPlayed   || 1,
+            totalPoints:   data.totalPoints   || 0,
           }),
         })
         const result = await res.json()
-        if (result.success) {
+        console.log('[BattleX] TT score result:', result)
+        if (result.success || result.ok) {
           setScoreNotif({
             playerName: data.playerName,
             score:      data.playerScore,

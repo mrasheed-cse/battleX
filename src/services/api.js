@@ -24,8 +24,9 @@ export const token = {
   clear:      ()     => { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(REFRESH_KEY); localStorage.removeItem(USER_KEY); localStorage.removeItem('userId'); localStorage.removeItem('username') },
   saveUser:   (u)    => {
     localStorage.setItem(USER_KEY, JSON.stringify(u))
-    if (u?.userId)   localStorage.setItem('userId',   u.userId)
-    if (u?.username) localStorage.setItem('username', u.username)
+    if (u?.userId)      localStorage.setItem('userId',      u.userId)
+    if (u?.username)    localStorage.setItem('username',    u.username)
+    if (u?.displayName) localStorage.setItem('bx_username', u.displayName || u.username)
   },
   getUser:    ()     => { try { return JSON.parse(localStorage.getItem(USER_KEY)) } catch { return null } },
 }
