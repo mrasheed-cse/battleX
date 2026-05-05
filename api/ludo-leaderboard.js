@@ -44,11 +44,9 @@ export default async function handler(req, res) {
       const playedAt = new Date().toISOString()
       let savedCount = 0
 
+      // POST all to /api/v1/ludo/leaderboard (one per player)
       for (const r of results) {
         const position = Math.min(Math.max(parseInt(r.position)||1,1),4)
-
-        // POST to /api/v1/ludo/leaderboard (LudoLeaderboard schema)
-        // durationSecs not durationMs!
         const lbBody = {
           matchId,
           playerName:   String(r.playerName || r.color || 'Unknown').slice(0,50),
@@ -58,23 +56,23 @@ export default async function handler(req, res) {
           totalPlayers: parseInt(totalPlayers) || results.length,
           playedAt,
         }
-        const lbRes = await gw('POST', '/api/v1/ludo/leaderboard', lbBody)
-        console.log('[LUDO] leaderboard save:', lbRes.status, JSON.stringify(lbRes.data).slice(0,100))
-
-        // Also POST to /api/v1/ludo/results/batch for detailed results
-        const resultBody = {
-          matchId,
-          playerName:   lbBody.playerName,
-          position,
-          color:        r.color || null,
-          points:       POINTS_MAP[position] || 10,
-          durationMs:   parseInt(r.durationMs)||0,
-          totalPlayers: lbBody.totalPlayers,
-          playedAt,
-        }
-        await gw('POST', '/api/v1/ludo/results/batch', [resultBody])
+        await gw('POST', '/api/v1/ludo/leaderboard', lbBody)
         savedCount++
       }
+
+      // Also POST batch to /api/v1/ludo/results/batch to update player stats
+      const batchBody = results.map(r => ({
+        matchId,
+        playerName:   String(r.playerName || r.color || 'Unknown').slice(0,50),
+        position:     Math.min(Math.max(parseInt(r.position)||1,1),4),
+        color:        r.color || null,
+        points:       POINTS_MAP[Math.min(Math.max(parseInt(r.position)||1,1),4)] || 10,
+        durationMs:   Math.max(0, parseInt(r.durationMs)||0),
+        totalPlayers: parseInt(totalPlayers) || results.length,
+        playedAt,
+      }))
+      const batchRes = await gw('POST', '/api/v1/ludo/results/batch', batchBody)
+      console.log('[LUDO] batch result:', batchRes.status, JSON.stringify(batchRes.data).slice(0,100))
 
       return res.status(201).json({ ok: true, count: savedCount })
     }

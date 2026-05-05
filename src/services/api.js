@@ -12,8 +12,8 @@ const PLAYER   = `${PROXY}/player`
 const GAME     = `${PROXY}/game`
 const WALLET   = `${PROXY}/wallet`
 
-const TOKEN_KEY   = 'bx_access_token'
-const REFRESH_KEY = 'bx_refresh_token'
+const TOKEN_KEY   = 'token'
+const REFRESH_KEY = 'refreshToken'
 const USER_KEY    = 'bx_user'
 
 // ── Token helpers ─────────────────────────────────────────────────────────────
@@ -21,8 +21,12 @@ export const token = {
   get:        ()     => localStorage.getItem(TOKEN_KEY),
   getRefresh: ()     => localStorage.getItem(REFRESH_KEY),
   set:        (a, r) => { localStorage.setItem(TOKEN_KEY, a); localStorage.setItem(REFRESH_KEY, r) },
-  clear:      ()     => { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(REFRESH_KEY); localStorage.removeItem(USER_KEY) },
-  saveUser:   (u)    => localStorage.setItem(USER_KEY, JSON.stringify(u)),
+  clear:      ()     => { localStorage.removeItem(TOKEN_KEY); localStorage.removeItem(REFRESH_KEY); localStorage.removeItem(USER_KEY); localStorage.removeItem('userId'); localStorage.removeItem('username') },
+  saveUser:   (u)    => {
+    localStorage.setItem(USER_KEY, JSON.stringify(u))
+    if (u?.userId)   localStorage.setItem('userId',   u.userId)
+    if (u?.username) localStorage.setItem('username', u.username)
+  },
   getUser:    ()     => { try { return JSON.parse(localStorage.getItem(USER_KEY)) } catch { return null } },
 }
 
