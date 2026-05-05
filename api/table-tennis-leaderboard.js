@@ -92,7 +92,7 @@ export default async function handler(req, res) {
       const text = await r.text()
       console.log('[TT POST] status:', r.status, text.slice(0,200))
       if (!r.ok) return res.status(r.status).json({ error:`Backend ${r.status}: ${text.slice(0,100)}` })
-      return res.status(201).json({ ok: true })
+      return res.status(201).json({ ok: true, success: true })
     }
 
     return res.status(405).json({ error:'Method not allowed' })
