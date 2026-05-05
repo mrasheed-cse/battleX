@@ -105,3 +105,9 @@
 .msg       { padding:10px 14px; border-radius:8px; font-size:13px; margin-bottom:8px; }
 .msgOk     { background:rgba(76,175,80,.1); border:1px solid rgba(76,175,80,.3); color:#81c784; }
 .msgErr    { background:rgba(244,67,54,.1); border:1px solid rgba(244,67,54,.3); color:#ef9a9a; }
+
+/* Empty state */
+.emptyState { text-align:center; padding:40px 20px; }
+.emptyIcon  { font-size:48px; margin-bottom:12px; }
+.emptyTitle { font-size:16px; font-weight:700; color:rgba(255,255,255,0.5); margin:0 0 6px; }
+.emptySub   { font-size:13px; color:rgba(255,255,255,0.3); margin:0; }

@@ -7,14 +7,11 @@ import styles from './Dashboard.module.css'
 const fmtMoney    = n   => `৳${(+(n||0)).toFixed(2)}`
 const fmtDate     = iso => iso ? new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'
 const fmtDateTime = iso => iso ? new Date(iso).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'
-const pct         = n   => `${((+(n||0))*100).toFixed(1)}%`
 const outcomeColor = o  => ({Win:'#4caf50',Loss:'#f44336',Draw:'#ff9800'})[o]||'#90caf9'
 const outcomeIcon  = o  => ({Win:'🏆',Loss:'💔',Draw:'🤝'})[o]||'🎮'
 
-// Unwrap { success, data } or just return raw
 function unwrap(res) {
   if (!res) return null
-  if (res?.success && res?.data !== undefined) return res.data
   if (res?.data !== undefined) return res.data
   return res
 }
@@ -24,14 +21,13 @@ function StatCard({ icon, label, value, color }) {
     <div className={styles.statCard}>
       <div className={styles.statIcon} style={{ color }}>{icon}</div>
       <div>
-        <div className={styles.statValue}>{value ?? '—'}</div>
+        <div className={styles.statValue}>{value ?? '0'}</div>
         <div className={styles.statLabel}>{label}</div>
       </div>
     </div>
   )
 }
 
-// ── Profile Edit ──────────────────────────────────────────────────────────────
 function ProfileEdit({ user, dashboard, onSave }) {
   const [form,     setForm]     = useState({
     displayName: dashboard?.displayName || '',
@@ -51,27 +47,19 @@ function ProfileEdit({ user, dashboard, onSave }) {
       await players.updateMe({ userId: user?.userId, ...form })
       setMsg({ ok:true, text:'Profile updated!' })
       onSave()
-    } catch(err) {
-      setMsg({ ok:false, text: err.message||'Update failed' })
+    } catch(err) { setMsg({ ok:false, text: err.message||'Update failed' })
     } finally { setSaving(false) }
   }
 
   const handlePwChange = async e => {
     e.preventDefault()
-    if (pwForm.newPassword !== pwForm.confirmNew) {
-      setPwMsg({ ok:false, text:'Passwords do not match' }); return
-    }
+    if (pwForm.newPassword !== pwForm.confirmNew) { setPwMsg({ ok:false, text:'Passwords do not match' }); return }
     setPwSaving(true); setPwMsg(null)
     try {
-      await authApi.changePassword({
-        userId: user?.userId,
-        currentPassword: pwForm.currentPassword,
-        newPassword:     pwForm.newPassword,
-      })
+      await authApi.changePassword({ userId: user?.userId, currentPassword: pwForm.currentPassword, newPassword: pwForm.newPassword })
       setPwMsg({ ok:true, text:'Password changed!' })
       setPwForm({ currentPassword:'', newPassword:'', confirmNew:'' })
-    } catch(err) {
-      setPwMsg({ ok:false, text: err.message||'Failed' })
+    } catch(err) { setPwMsg({ ok:false, text: err.message||'Failed' })
     } finally { setPwSaving(false) }
   }
 
@@ -89,8 +77,7 @@ function ProfileEdit({ user, dashboard, onSave }) {
           ].map(f => (
             <div key={f.key} className={styles.formRow}>
               <label>{f.label}</label>
-              <input type="text" placeholder={f.ph}
-                value={form[f.key]}
+              <input type="text" placeholder={f.ph} value={form[f.key]}
                 onChange={e => setForm(p=>({...p,[f.key]:e.target.value}))}/>
             </div>
           ))}
@@ -99,7 +86,6 @@ function ProfileEdit({ user, dashboard, onSave }) {
           </button>
         </form>
       </div>
-
       <div className={styles.card}>
         <h3 className={styles.cardTitle}>🔒 Change Password</h3>
         {pwMsg && <div className={`${styles.msg} ${pwMsg.ok?styles.msgOk:styles.msgErr}`}>{pwMsg.text}</div>}
@@ -111,8 +97,7 @@ function ProfileEdit({ user, dashboard, onSave }) {
           ].map(f => (
             <div key={f.key} className={styles.formRow}>
               <label>{f.label}</label>
-              <input type="password" placeholder={f.ph}
-                value={pwForm[f.key]}
+              <input type="password" placeholder={f.ph} value={pwForm[f.key]}
                 onChange={e => setPwForm(p=>({...p,[f.key]:e.target.value}))}/>
             </div>
           ))}
@@ -125,23 +110,17 @@ function ProfileEdit({ user, dashboard, onSave }) {
   )
 }
 
-// ── Main Dashboard ────────────────────────────────────────────────────────────
 export default function Dashboard() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
   const [dashboard,  setDashboard]  = useState(null)
   const [walletData, setWalletData] = useState(null)
-  const [stats,      setStats]      = useState(null)
-  const [history,    setHistory]    = useState([])
   const [txns,       setTxns]       = useState([])
   const [tab,        setTab]        = useState('overview')
   const [loading,    setLoading]    = useState(true)
   const [txnLoading, setTxnLoading] = useState(false)
   const [error,      setError]      = useState(null)
-  const [histPage,   setHistPage]   = useState(1)
-  const [histTotal,  setHistTotal]  = useState(0)
-  const [gameFilter, setGameFilter] = useState('')
   const [withdrawForm, setWithdrawForm] = useState({ amount:'', method:'bkash', accountInfo:'' })
   const [withdrawing,  setWithdrawing]  = useState(false)
   const [withdrawMsg,  setWithdrawMsg]  = useState(null)
@@ -149,68 +128,28 @@ export default function Dashboard() {
   const loadCore = useCallback(async () => {
     setLoading(true); setError(null)
     try {
-      const [dRes, wRes, sRes] = await Promise.allSettled([
+      const [dRes, wRes] = await Promise.allSettled([
         players.dashboard(),
         wallet.me(),
-        players.stats(),
       ])
+      if (dRes.status === 'fulfilled') setDashboard(unwrap(dRes.value))
+      else console.error('[Dashboard]', dRes.reason?.message)
 
-      // Log raw responses for debugging
-      if (dRes.status === 'fulfilled') {
-        console.log('[Dashboard] raw dashboard:', JSON.stringify(dRes.value).slice(0,300))
-        setDashboard(unwrap(dRes.value))
-      } else {
-        console.error('[Dashboard] dashboard failed:', dRes.reason?.message)
-      }
-
-      if (wRes.status === 'fulfilled') {
-        console.log('[Dashboard] raw wallet:', JSON.stringify(wRes.value).slice(0,200))
-        setWalletData(unwrap(wRes.value))
-      } else {
-        console.error('[Dashboard] wallet failed:', wRes.reason?.message)
-      }
-
-      if (sRes.status === 'fulfilled') {
-        console.log('[Dashboard] raw stats:', JSON.stringify(sRes.value).slice(0,200))
-        setStats(unwrap(sRes.value))
-      } else {
-        console.error('[Dashboard] stats failed:', sRes.reason?.message)
-      }
-
+      if (wRes.status === 'fulfilled') setWalletData(unwrap(wRes.value))
+      else console.error('[Wallet]', wRes.reason?.message)
     } catch(e) {
       setError(e.message)
-    } finally {
-      setLoading(false)
-    }
-  }, [])
-
-  const loadHistory = useCallback(async (page=1, gameType='') => {
-    try {
-      const params = { page, pageSize:10 }
-      if (gameType) params.gameType = gameType
-      const res = await players.gameHistory(params)
-      console.log('[Dashboard] history:', JSON.stringify(res).slice(0,200))
-      const data = unwrap(res)
-      const items = data?.items || data?.data || (Array.isArray(data) ? data : [])
-      setHistory(items)
-      setHistTotal(data?.totalCount || items.length || 0)
-      setHistPage(page)
-    } catch(e) {
-      console.error('[Dashboard] history failed:', e.message)
-      setHistory([])
-    }
+    } finally { setLoading(false) }
   }, [])
 
   const loadTxns = useCallback(async () => {
     setTxnLoading(true)
     try {
       const res = await wallet.transactions({ page:1, pageSize:20 })
-      console.log('[Dashboard] transactions:', JSON.stringify(res).slice(0,200))
       const data = unwrap(res)
-      const items = data?.items || data?.transactions || (Array.isArray(data) ? data : [])
-      setTxns(items)
+      setTxns(data?.items || [])
     } catch(e) {
-      console.error('[Dashboard] txns failed:', e.message)
+      console.error('[Txns]', e.message)
       setTxns([])
     } finally { setTxnLoading(false) }
   }, [])
@@ -221,18 +160,17 @@ export default function Dashboard() {
   }, [user, navigate, loadCore])
 
   useEffect(() => {
-    if (tab === 'history') loadHistory(1, gameFilter)
-    if (tab === 'wallet')  loadTxns()
-  }, [tab, gameFilter, loadHistory, loadTxns])
+    if (tab === 'wallet') loadTxns()
+  }, [tab, loadTxns])
 
   const handleWithdraw = async e => {
     e.preventDefault()
     setWithdrawing(true); setWithdrawMsg(null)
     try {
       await wallet.withdraw({
-        userId:      user?.userId,
-        amount:      parseFloat(withdrawForm.amount),
-        method:      withdrawForm.method,
+        userId: user?.userId,
+        amount: parseFloat(withdrawForm.amount),
+        method: withdrawForm.method,
         accountInfo: withdrawForm.accountInfo,
       })
       setWithdrawMsg({ ok:true, text:'Withdrawal request submitted!' })
@@ -244,34 +182,20 @@ export default function Dashboard() {
   }
 
   if (!user) return null
+  if (loading) return <div className={styles.loadWrap}><div className={styles.spinner}/><p>Loading dashboard...</p></div>
+  if (error)   return <div className={styles.errorWrap}><p>⚠ {error}</p><button className="btn btn-primary" onClick={loadCore}>Retry</button></div>
 
-  if (loading) return (
-    <div className={styles.loadWrap}>
-      <div className={styles.spinner}/>
-      <p>Loading dashboard...</p>
-    </div>
-  )
+  const d = dashboard || {}
+  const w = walletData || {}
 
-  if (error) return (
-    <div className={styles.errorWrap}>
-      <p>⚠ {error}</p>
-      <button className="btn btn-primary" onClick={loadCore}>Retry</button>
-    </div>
-  )
+  // Wallet: backend returns moneyBalance not balance
+  const balance = w.moneyBalance ?? w.balance ?? w.availableBalance ?? d.walletBalance ?? 0
+  const points  = w.pointsBalance ?? w.points ?? 0
+  const pending = w.pendingWithdrawal ?? w.pendingWithdrawals ?? d.pendingWithdrawals ?? 0
 
-  // Use dashboard data with safe fallbacks
-  // walletBalance comes from PlayerDashboardDto directly
-  const d  = dashboard || {}
-  const w  = walletData || {}
-  const s  = stats || {}
-
-  // Balance: try walletData first, fall back to dashboard.walletBalance
-  const balance  = w.balance ?? w.availableBalance ?? d.walletBalance ?? 0
-  const pending  = w.pendingWithdrawals ?? d.pendingWithdrawals ?? 0
-
-  // Win rate: backend returns 0-1 (e.g. 0.67) OR 0-100 (e.g. 67)
-  const winRateRaw = d.winRate ?? s.winRate ?? 0
-  const winRatePct = winRateRaw <= 1 ? `${(winRateRaw*100).toFixed(1)}%` : `${winRateRaw.toFixed(1)}%`
+  // Win rate: 0-1 float → show as percentage
+  const winRate = d.winRate ?? 0
+  const winRatePct = winRate <= 1 ? `${(winRate*100).toFixed(1)}%` : `${winRate.toFixed(1)}%`
 
   return (
     <div className={styles.page}>
@@ -284,10 +208,10 @@ export default function Dashboard() {
                 ? <img src={d.avatarUrl} alt={d.displayName}/>
                 : <span>{(d.displayName||d.username||user.username||'U')[0].toUpperCase()}</span>
               }
-              {d.currentRank && <div className={styles.rankBadge}>#{d.currentRank}</div>}
+              {(d.currentRank > 0) && <div className={styles.rankBadge}>#{d.currentRank}</div>}
             </div>
             <div className={styles.heroInfo}>
-              <h1 className={styles.heroName}>{d.displayName||d.username||user.username||'Player'}</h1>
+              <h1 className={styles.heroName}>{d.displayName||d.username||user.username}</h1>
               <p className={styles.heroMeta}>
                 @{d.username||user.username}
                 {d.country && <span> · 🌍 {d.country}</span>}
@@ -298,6 +222,7 @@ export default function Dashboard() {
             <div className={styles.heroWallet}>
               <div className={styles.balanceLabel}>Wallet Balance</div>
               <div className={styles.balanceVal}>{fmtMoney(balance)}</div>
+              <div className={styles.balanceLabel} style={{marginTop:4}}>⭐ {points.toLocaleString()} pts</div>
               {pending > 0 && <div className={styles.pendingLabel}>⏳ {fmtMoney(pending)} pending</div>}
             </div>
           </div>
@@ -305,25 +230,24 @@ export default function Dashboard() {
       </div>
 
       <div className="container">
-        {/* Stats */}
+        {/* Stats grid */}
         <div className={styles.statsGrid}>
-          <StatCard icon="🎮" label="Games Played" value={d.totalGamesPlayed??s.totalGamesPlayed??0}             color="#90caf9"/>
-          <StatCard icon="🏆" label="Wins"          value={d.totalWins??s.totalWins??0}                          color="#ffd700"/>
-          <StatCard icon="📉" label="Losses"        value={d.totalLosses??s.totalLosses??0}                      color="#f44336"/>
-          <StatCard icon="📊" label="Win Rate"      value={winRatePct}                                            color="#4caf50"/>
-          <StatCard icon="⭐" label="Total Points"  value={(d.totalPointsEarned??s.totalPointsEarned??0).toLocaleString()} color="#ff9800"/>
-          <StatCard icon="💰" label="Total Earned"  value={fmtMoney(d.totalMoneyEarned??s.totalMoneyEarned)}     color="#81c784"/>
-          <StatCard icon="🔥" label="Win Streak"    value={s.streak??0}                                           color="#ff5722"/>
-          <StatCard icon="🥇" label="Global Rank"   value={d.currentRank??s.currentRank ? `#${d.currentRank??s.currentRank}` : '—'} color="#ce93d8"/>
+          <StatCard icon="🎮" label="Games Played" value={d.totalGamesPlayed||0}                      color="#90caf9"/>
+          <StatCard icon="🏆" label="Wins"          value={d.totalWins||0}                             color="#ffd700"/>
+          <StatCard icon="📉" label="Losses"        value={d.totalLosses||0}                           color="#f44336"/>
+          <StatCard icon="📊" label="Win Rate"      value={winRatePct}                                  color="#4caf50"/>
+          <StatCard icon="⭐" label="Points Earned" value={(d.totalPointsEarned||0).toLocaleString()}  color="#ff9800"/>
+          <StatCard icon="💰" label="Money Earned"  value={fmtMoney(d.totalMoneyEarned)}              color="#81c784"/>
+          <StatCard icon="🤝" label="Draws"         value={d.totalDraws||0}                            color="#90caf9"/>
+          <StatCard icon="🥇" label="Global Rank"   value={(d.currentRank>0)?`#${d.currentRank}`:'—'} color="#ce93d8"/>
         </div>
 
         {/* Tabs */}
         <div className={styles.tabs}>
           {[
-            { id:'overview', label:'📊 Overview'     },
-            { id:'history',  label:'🎮 Game History' },
-            { id:'wallet',   label:'💰 Wallet'       },
-            { id:'profile',  label:'👤 Profile'      },
+            { id:'overview', label:'📊 Overview' },
+            { id:'wallet',   label:'💰 Wallet'   },
+            { id:'profile',  label:'👤 Profile'  },
           ].map(t => (
             <button key={t.id}
               className={`${styles.tab} ${tab===t.id?styles.tabActive:''}`}
@@ -335,87 +259,31 @@ export default function Dashboard() {
 
         {/* Overview */}
         {tab === 'overview' && (
-          <div className={styles.overviewGrid}>
-            {s.gameTypeBreakdown && Object.keys(s.gameTypeBreakdown).length > 0 && (
-              <div className={styles.card}>
-                <h3 className={styles.cardTitle}>🎯 Games by Type</h3>
-                {Object.entries(s.gameTypeBreakdown).map(([type, count]) => (
-                  <div key={type} className={styles.breakdownRow}>
-                    <span className={styles.breakdownType}>{type}</span>
-                    <div className={styles.breakdownBar}>
-                      <div className={styles.breakdownFill}
-                        style={{ width:`${Math.min(100,(count/Math.max(d.totalGamesPlayed||1,1))*100)}%` }}/>
-                    </div>
-                    <span className={styles.breakdownCount}>{count}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div className={styles.card}>
-              <h3 className={styles.cardTitle}>🕐 Recent Games</h3>
-              {(d.recentGames||[]).length === 0
-                ? <p className={styles.empty}>No recent games. Start playing!</p>
-                : (d.recentGames||[]).map((g,i) => (
-                  <div key={i} className={styles.recentRow}>
-                    <span className={styles.recentIcon}>{outcomeIcon(g.outcome)}</span>
-                    <div className={styles.recentInfo}>
-                      <span className={styles.recentType}>{g.gameType}</span>
-                      <span className={styles.recentDate}>{fmtDate(g.playedAt)}</span>
-                    </div>
-                    <div className={styles.recentRight}>
-                      <span style={{color:outcomeColor(g.outcome),fontWeight:700,fontSize:13}}>{g.outcome}</span>
-                      {g.pointsEarned>0 && <span className={styles.recentPts}>+{g.pointsEarned} pts</span>}
-                    </div>
-                  </div>
-                ))
-              }
-              <button className={styles.seeAll} onClick={()=>setTab('history')}>See all games →</button>
-            </div>
-          </div>
-        )}
-
-        {/* History */}
-        {tab === 'history' && (
           <div className={styles.card}>
-            <div className={styles.histHeader}>
-              <h3 className={styles.cardTitle}>🎮 Game History</h3>
-              <select className={styles.filterSelect} value={gameFilter}
-                onChange={e=>{setGameFilter(e.target.value);loadHistory(1,e.target.value)}}>
-                <option value="">All Games</option>
-                <option value="Ludo">Ludo</option>
-                <option value="SnakesAndLadders">Snakes &amp; Ladders</option>
-                <option value="TableTennis">Table Tennis</option>
-                <option value="ParkingJam">Parking Jam</option>
-              </select>
-            </div>
-            {history.length === 0
-              ? <p className={styles.empty}>No games found. Play some games!</p>
-              : <table className={styles.histTable}>
-                  <thead>
-                    <tr><th>Game</th><th>Outcome</th><th>Score</th><th>Points</th><th>Earned</th><th>Opponents</th><th>Date</th></tr>
-                  </thead>
-                  <tbody>
-                    {history.map((g,i) => (
-                      <tr key={i}>
-                        <td className={styles.tdGame}>{g.gameType||'—'}</td>
-                        <td><span style={{color:outcomeColor(g.outcome),fontWeight:700}}>{outcomeIcon(g.outcome)} {g.outcome}</span></td>
-                        <td>{g.score??'—'}</td>
-                        <td><span className={styles.ptsBadge}>+{g.pointsEarned||0}</span></td>
-                        <td>{(g.moneyEarned||0)>0 ? fmtMoney(g.moneyEarned) : '—'}</td>
-                        <td>{g.opponentCount??'—'}</td>
-                        <td className={styles.tdDate}>{fmtDate(g.playedAt)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <h3 className={styles.cardTitle}>🕐 Recent Games</h3>
+            {(d.recentGames||[]).length === 0
+              ? (
+                <div className={styles.emptyState}>
+                  <div className={styles.emptyIcon}>🎮</div>
+                  <p className={styles.emptyTitle}>No games played yet</p>
+                  <p className={styles.emptySub}>Play some games and your history will appear here!</p>
+                  <Link to="/games" className="btn btn-primary" style={{marginTop:12}}>Browse Games</Link>
+                </div>
+              )
+              : (d.recentGames||[]).map((g,i) => (
+                <div key={i} className={styles.recentRow}>
+                  <span className={styles.recentIcon}>{outcomeIcon(g.outcome)}</span>
+                  <div className={styles.recentInfo}>
+                    <span className={styles.recentType}>{g.gameType}</span>
+                    <span className={styles.recentDate}>{fmtDate(g.playedAt)}</span>
+                  </div>
+                  <div className={styles.recentRight}>
+                    <span style={{color:outcomeColor(g.outcome),fontWeight:700,fontSize:13}}>{g.outcome}</span>
+                    {g.pointsEarned>0 && <span className={styles.recentPts}>+{g.pointsEarned} pts</span>}
+                  </div>
+                </div>
+              ))
             }
-            {histTotal > 10 && (
-              <div className={styles.pagination}>
-                <button disabled={histPage<=1} onClick={()=>loadHistory(histPage-1,gameFilter)}>← Prev</button>
-                <span>Page {histPage} of {Math.ceil(histTotal/10)}</span>
-                <button disabled={histPage>=Math.ceil(histTotal/10)} onClick={()=>loadHistory(histPage+1,gameFilter)}>Next →</button>
-              </div>
-            )}
           </div>
         )}
 
@@ -425,7 +293,11 @@ export default function Dashboard() {
             <div className={styles.card}>
               <h3 className={styles.cardTitle}>💰 Wallet</h3>
               <div className={styles.balanceBig}>{fmtMoney(balance)}</div>
+              <div style={{fontSize:14,color:'rgba(255,255,255,0.5)',marginBottom:8}}>
+                ⭐ {points.toLocaleString()} points
+              </div>
               {pending > 0 && <p className={styles.pending}>⏳ Pending: {fmtMoney(pending)}</p>}
+
               <h4 className={styles.subTitle}>Request Withdrawal</h4>
               {withdrawMsg && (
                 <div className={`${styles.msg} ${withdrawMsg.ok?styles.msgOk:styles.msgErr}`}>{withdrawMsg.text}</div>
@@ -439,8 +311,7 @@ export default function Dashboard() {
                 </div>
                 <div className={styles.formRow}>
                   <label>Method</label>
-                  <select value={withdrawForm.method}
-                    onChange={e=>setWithdrawForm(f=>({...f,method:e.target.value}))}>
+                  <select value={withdrawForm.method} onChange={e=>setWithdrawForm(f=>({...f,method:e.target.value}))}>
                     <option value="bkash">bKash</option>
                     <option value="nagad">Nagad</option>
                     <option value="rocket">Rocket</option>
@@ -458,27 +329,37 @@ export default function Dashboard() {
                 </button>
               </form>
             </div>
+
             <div className={styles.card}>
               <h3 className={styles.cardTitle}>📋 Transactions</h3>
               {txnLoading
                 ? <div className={styles.spinner}/>
                 : txns.length === 0
-                  ? <p className={styles.empty}>No transactions yet.</p>
-                  : <table className={styles.txnTable}>
-                      <thead><tr><th>Type</th><th>Amount</th><th>Reason</th><th>Date</th></tr></thead>
+                  ? (
+                    <div className={styles.emptyState}>
+                      <div className={styles.emptyIcon}>💳</div>
+                      <p className={styles.emptyTitle}>No transactions yet</p>
+                      <p className={styles.emptySub}>Your transaction history will appear here.</p>
+                    </div>
+                  )
+                  : (
+                    <table className={styles.txnTable}>
+                      <thead><tr><th>Type</th><th>Amount</th><th>Points</th><th>Reason</th><th>Date</th></tr></thead>
                       <tbody>
                         {txns.map((t,i) => (
                           <tr key={i}>
-                            <td>{t.type||t.transactionType||t.kind||'Transaction'}</td>
-                            <td className={(+(t.amount||t.moneyDelta||0))>=0?styles.txnPos:styles.txnNeg}>
-                              {(+(t.amount||t.moneyDelta||0))>=0?'+':''}{fmtMoney(t.amount||t.moneyDelta)}
+                            <td>{t.type||t.transactionType||'—'}</td>
+                            <td className={(+(t.moneyDelta||t.amount||0))>=0?styles.txnPos:styles.txnNeg}>
+                              {(+(t.moneyDelta||t.amount||0))>=0?'+':''}{fmtMoney(t.moneyDelta??t.amount)}
                             </td>
+                            <td>{t.pointsDelta!=null ? `${t.pointsDelta>=0?'+':''}${t.pointsDelta}` : '—'}</td>
                             <td>{t.reason||t.description||'—'}</td>
-                            <td>{fmtDate(t.createdAt||t.date||t.timestamp)}</td>
+                            <td>{fmtDate(t.createdAt||t.date)}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
+                  )
               }
             </div>
           </div>
