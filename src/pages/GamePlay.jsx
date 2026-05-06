@@ -1,3 +1,4 @@
+import { recordGameResults } from '../services/api'
 /**
  * BattleX GamePlay Page
  * Renders the game iframe and handles:
@@ -321,6 +322,21 @@ export default function GamePlay() {
             score:      data.playerScore,
             rank:       null,
           })
+          // Record game in Player Service for dashboard stats
+          const storedUser = localStorage.getItem('bx_user')
+          const bxUser = storedUser ? JSON.parse(storedUser) : null
+          if (bxUser?.userId || bxUser?.username) {
+            recordGameResults([{
+              userId:        bxUser.userId    || null,
+              username:      bxUser.username  || data.playerName,
+              gameType:      'TableTennis',
+              outcome:       data.won ? 'Win' : 'Loss',
+              score:         data.playerScore || 0,
+              pointsEarned:  data.totalPoints || 0,
+              moneyEarned:   0,
+              opponentCount: 1,
+            }]).catch(e => console.warn('[BattleX] record-game failed:', e.message))
+          }
         }
       } catch (e) {
         console.warn('[BattleX] TT score submit failed:', e)

@@ -7,7 +7,8 @@ import styles from './Dashboard.module.css'
 const fmtMoney    = n   => `৳${(+(n||0)).toFixed(2)}`
 const fmtDate     = iso => iso ? new Date(iso).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : '—'
 const fmtDateTime = iso => iso ? new Date(iso).toLocaleString('en-US',{month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '—'
-const fmtMs       = ms  => { if(!ms||ms<=0) return '—'; const s=Math.floor(ms/1000),m=Math.floor(s/60); return m>0?`${m}m ${s%60}s`:`${s}s` }
+const outcomeColor = o  => ({Win:'#4caf50',Loss:'#f44336',Draw:'#ff9800'})[o] || '#90caf9'
+const outcomeIcon  = o  => ({Win:'🏆',Loss:'💔',Draw:'🤝'})[o] || '🎮'
 
 function unwrap(res) {
   if (!res) return null
@@ -15,86 +16,13 @@ function unwrap(res) {
   return res
 }
 
-// Fetch all leaderboard data for the logged-in user across all games
-async function fetchPlayerStats(username) {
-  const name = encodeURIComponent(username)
-  const stats = { gamesPlayed:0, wins:0, losses:0, points:0, matches:[] }
-
-  try {
-    // Ludo stats
-    const ludoRes = await fetch(`/api/ludo-leaderboard?view=rankings&limit=200&search=${name}`)
-    const ludoJson = await ludoRes.json()
-    const ludoPlayer = (ludoJson.rankings||[]).find(r =>
-      r.player_name?.toLowerCase() === username.toLowerCase())
-    if (ludoPlayer) {
-      stats.gamesPlayed += ludoPlayer.matches || 0
-      stats.wins        += ludoPlayer.wins    || 0
-      stats.points      += ludoPlayer.total_points || 0
-      stats.losses      += (ludoPlayer.matches||0) - (ludoPlayer.wins||0)
-    }
-
-    // Ludo match history
-    const ludoMatchRes = await fetch(`/api/ludo-leaderboard?view=matches&limit=100&search=${name}`)
-    const ludoMatchJson = await ludoMatchRes.json()
-    ;(ludoMatchJson.matches||[]).forEach(m => {
-      const me = m.players?.find(p => p.player_name?.toLowerCase() === username.toLowerCase())
-      if (me) stats.matches.push({
-        game: 'Ludo', outcome: me.position===1?'Win':me.position<=3?'Loss':'Loss',
-        score: me.position, pointsEarned: me.points||0, playedAt: m.played_at,
-        matchId: m.match_id, position: me.position,
-      })
-    })
-  } catch(e) { console.warn('[Dashboard] Ludo stats failed:', e.message) }
-
-  try {
-    // Table Tennis stats
-    const ttRes = await fetch(`/api/table-tennis-leaderboard?view=leaderboard&limit=200`)
-    const ttJson = await ttRes.json()
-    const ttEntries = (ttJson.entries||[]).filter(e =>
-      e.player_name?.toLowerCase() === username.toLowerCase())
-    ttEntries.forEach(e => {
-      stats.gamesPlayed++
-      if (e.won) stats.wins++; else stats.losses++
-      stats.points += e.total_points || 0
-      stats.matches.push({
-        game: 'Table Tennis', outcome: e.won?'Win':'Loss',
-        score: e.player_score, pointsEarned: e.total_points||0,
-        playedAt: e.submitted_at, opponentCount: 1,
-      })
-    })
-  } catch(e) { console.warn('[Dashboard] TT stats failed:', e.message) }
-
-  try {
-    // SNL stats
-    const snlRes = await fetch(`/api/snl-leaderboard?view=rankings&limit=200&search=${name}`)
-    const snlJson = await snlRes.json()
-    const snlPlayer = (snlJson.rankings||[]).find(r =>
-      r.player_name?.toLowerCase() === username.toLowerCase())
-    if (snlPlayer) {
-      stats.gamesPlayed += snlPlayer.matches || 0
-      stats.wins        += snlPlayer.wins    || 0
-      stats.points      += snlPlayer.total_points || 0
-      stats.losses      += (snlPlayer.matches||0) - (snlPlayer.wins||0)
-    }
-  } catch(e) { console.warn('[Dashboard] SNL stats failed:', e.message) }
-
-  // Sort matches by date, newest first
-  stats.matches.sort((a,b) => new Date(b.playedAt||0) - new Date(a.playedAt||0))
-  stats.winRate = stats.gamesPlayed > 0
-    ? Math.round((stats.wins / stats.gamesPlayed) * 100)
-    : 0
-
-  return stats
-}
-
-function StatCard({ icon, label, value, color, sub }) {
+function StatCard({ icon, label, value, color }) {
   return (
     <div className={styles.statCard}>
       <div className={styles.statIcon} style={{ color }}>{icon}</div>
       <div>
         <div className={styles.statValue}>{value ?? '0'}</div>
         <div className={styles.statLabel}>{label}</div>
-        {sub && <div className={styles.statSub}>{sub}</div>}
       </div>
     </div>
   )
@@ -188,7 +116,11 @@ export default function Dashboard() {
 
   const [dashboard,  setDashboard]  = useState(null)
   const [walletData, setWalletData] = useState(null)
-  const [gameStats,  setGameStats]  = useState(null)
+  const [stats,      setStats]      = useState(null)
+  const [history,    setHistory]    = useState([])
+  const [histTotal,  setHistTotal]  = useState(0)
+  const [histPage,   setHistPage]   = useState(1)
+  const [gameFilter, setGameFilter] = useState('')
   const [txns,       setTxns]       = useState([])
   const [tab,        setTab]        = useState('overview')
   const [loading,    setLoading]    = useState(true)
@@ -198,23 +130,38 @@ export default function Dashboard() {
   const [withdrawing,  setWithdrawing]  = useState(false)
   const [withdrawMsg,  setWithdrawMsg]  = useState(null)
 
-  const username = user?.username || user?.displayName || ''
-
   const loadCore = useCallback(async () => {
     setLoading(true); setError(null)
     try {
-      const [dRes, wRes, gsRes] = await Promise.allSettled([
+      const [dRes, wRes, sRes] = await Promise.allSettled([
         players.dashboard(),
         wallet.me(),
-        fetchPlayerStats(username),
+        players.stats(),
       ])
       if (dRes.status === 'fulfilled') setDashboard(unwrap(dRes.value))
+      else console.error('[Dashboard]', dRes.reason?.message)
       if (wRes.status === 'fulfilled') setWalletData(unwrap(wRes.value))
-      if (gsRes.status === 'fulfilled') setGameStats(gsRes.value)
-      else console.error('[GameStats]', gsRes.reason?.message)
+      else console.error('[Wallet]', wRes.reason?.message)
+      if (sRes.status === 'fulfilled') setStats(unwrap(sRes.value))
+      else console.warn('[Stats] not available:', sRes.reason?.message)
     } catch(e) { setError(e.message)
     } finally { setLoading(false) }
-  }, [username])
+  }, [])
+
+  const loadHistory = useCallback(async (page = 1, gameType = '') => {
+    try {
+      const params = { page, pageSize: 10 }
+      if (gameType) params.gameType = gameType
+      const res  = await players.gameHistory(params)
+      const data = unwrap(res)
+      setHistory(data?.items || [])
+      setHistTotal(data?.totalCount || 0)
+      setHistPage(page)
+    } catch(e) {
+      console.error('[History]', e.message)
+      setHistory([])
+    }
+  }, [])
 
   const loadTxns = useCallback(async () => {
     setTxnLoading(true)
@@ -232,8 +179,9 @@ export default function Dashboard() {
   }, [user, navigate, loadCore])
 
   useEffect(() => {
-    if (tab === 'wallet') loadTxns()
-  }, [tab, loadTxns])
+    if (tab === 'history') loadHistory(1, gameFilter)
+    if (tab === 'wallet')  loadTxns()
+  }, [tab, gameFilter, loadHistory, loadTxns])
 
   const handleWithdraw = async e => {
     e.preventDefault(); setWithdrawing(true); setWithdrawMsg(null)
@@ -250,13 +198,18 @@ export default function Dashboard() {
   if (loading) return <div className={styles.loadWrap}><div className={styles.spinner}/><p>Loading dashboard...</p></div>
   if (error)   return <div className={styles.errorWrap}><p>⚠ {error}</p><button className="btn btn-primary" onClick={loadCore}>Retry</button></div>
 
-  const d  = dashboard || {}
-  const w  = walletData || {}
-  const gs = gameStats || { gamesPlayed:0, wins:0, losses:0, points:0, winRate:0, matches:[] }
+  const d = dashboard || {}
+  const w = walletData || {}
+  const s = stats || {}
 
+  // Wallet: moneyBalance from wallet endpoint
   const balance = w.moneyBalance ?? w.balance ?? d.walletBalance ?? 0
   const points  = w.pointsBalance ?? 0
   const pending = w.pendingWithdrawal ?? d.pendingWithdrawals ?? 0
+
+  // Win rate: can be 0-1 float or 0-100
+  const winRateRaw = d.winRate ?? s.winRate ?? 0
+  const winRatePct = winRateRaw <= 1 ? `${(winRateRaw*100).toFixed(1)}%` : `${(+winRateRaw).toFixed(1)}%`
 
   return (
     <div className={styles.page}>
@@ -267,23 +220,23 @@ export default function Dashboard() {
             <div className={styles.avatar}>
               {d.avatarUrl
                 ? <img src={d.avatarUrl} alt={d.displayName}/>
-                : <span>{(d.displayName||d.username||username||'U')[0].toUpperCase()}</span>
+                : <span>{(d.displayName||d.username||user.username||'U')[0].toUpperCase()}</span>
               }
+              {d.currentRank > 0 && <div className={styles.rankBadge}>#{d.currentRank}</div>}
             </div>
             <div className={styles.heroInfo}>
-              <h1 className={styles.heroName}>{d.displayName||d.username||username}</h1>
+              <h1 className={styles.heroName}>{d.displayName||d.username||user.username}</h1>
               <p className={styles.heroMeta}>
-                @{d.username||username}
+                @{d.username||user.username}
                 {d.country && <span> · 🌍 {d.country}</span>}
                 <span> · Member since {fmtDate(d.memberSince)}</span>
               </p>
+              {d.lastPlayedAt && <p className={styles.heroSub}>Last played: {fmtDateTime(d.lastPlayedAt)}</p>}
             </div>
             <div className={styles.heroWallet}>
               <div className={styles.balanceLabel}>Wallet Balance</div>
               <div className={styles.balanceVal}>{fmtMoney(balance)}</div>
-              <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginTop:4}}>
-                ⭐ {points.toLocaleString()} pts
-              </div>
+              <div style={{fontSize:13,color:'rgba(255,255,255,0.4)',marginTop:4}}>⭐ {points.toLocaleString()} pts</div>
               {pending > 0 && <div className={styles.pendingLabel}>⏳ {fmtMoney(pending)} pending</div>}
             </div>
           </div>
@@ -291,17 +244,16 @@ export default function Dashboard() {
       </div>
 
       <div className="container">
-        {/* Stats — from leaderboard data */}
+        {/* Stats — from Player Service */}
         <div className={styles.statsGrid}>
-          <StatCard icon="🎮" label="Games Played" value={gs.gamesPlayed}                color="#90caf9"/>
-          <StatCard icon="🏆" label="Wins"          value={gs.wins}                       color="#ffd700"/>
-          <StatCard icon="📉" label="Losses"        value={gs.losses}                     color="#f44336"/>
-          <StatCard icon="📊" label="Win Rate"      value={`${gs.winRate}%`}              color="#4caf50"/>
-          <StatCard icon="⭐" label="Total Points"  value={gs.points.toLocaleString()}    color="#ff9800"/>
-          <StatCard icon="💰" label="Wallet"        value={fmtMoney(balance)}             color="#81c784"/>
-          <StatCard icon="🎯" label="Draws"         value={d.totalDraws||0}               color="#90caf9"/>
-          <StatCard icon="🏅" label="Best Game"
-            value={gs.matches[0]?.game || '—'}                                            color="#ce93d8"/>
+          <StatCard icon="🎮" label="Games Played"  value={d.totalGamesPlayed ?? s.totalGamesPlayed ?? 0}               color="#90caf9"/>
+          <StatCard icon="🏆" label="Wins"           value={d.totalWins        ?? s.totalWins        ?? 0}               color="#ffd700"/>
+          <StatCard icon="📉" label="Losses"         value={d.totalLosses      ?? s.totalLosses      ?? 0}               color="#f44336"/>
+          <StatCard icon="📊" label="Win Rate"       value={winRatePct}                                                   color="#4caf50"/>
+          <StatCard icon="⭐" label="Total Points"   value={(d.totalPointsEarned ?? s.totalPointsEarned ?? 0).toLocaleString()} color="#ff9800"/>
+          <StatCard icon="💰" label="Money Earned"   value={fmtMoney(d.totalMoneyEarned ?? s.totalMoneyEarned)}           color="#81c784"/>
+          <StatCard icon="🔥" label="Win Streak"     value={s.streak ?? 0}                                                color="#ff5722"/>
+          <StatCard icon="🥇" label="Global Rank"    value={d.currentRank > 0 ? `#${d.currentRank}` : '—'}              color="#ce93d8"/>
         </div>
 
         {/* Tabs */}
@@ -323,60 +275,51 @@ export default function Dashboard() {
         {/* Overview */}
         {tab === 'overview' && (
           <div className={styles.overviewGrid}>
-            {/* Game breakdown */}
-            {gs.gamesPlayed > 0 && (
+            {s.gameTypeBreakdown && Object.keys(s.gameTypeBreakdown).length > 0 && (
               <div className={styles.card}>
-                <h3 className={styles.cardTitle}>🎯 Performance</h3>
-                <div className={styles.perfRow}>
-                  <span>Win Rate</span>
-                  <div className={styles.perfBar}>
-                    <div className={styles.perfFill} style={{width:`${gs.winRate}%`,background:'#4caf50'}}/>
+                <h3 className={styles.cardTitle}>🎯 Games by Type</h3>
+                {Object.entries(s.gameTypeBreakdown).map(([type, count]) => (
+                  <div key={type} className={styles.breakdownRow}>
+                    <span className={styles.breakdownType}>{type}</span>
+                    <div className={styles.breakdownBar}>
+                      <div className={styles.breakdownFill}
+                        style={{ width:`${Math.min(100,(count/Math.max(d.totalGamesPlayed||1,1))*100)}%` }}/>
+                    </div>
+                    <span className={styles.breakdownCount}>{count}</span>
                   </div>
-                  <span>{gs.winRate}%</span>
-                </div>
-                <div className={styles.perfRow}>
-                  <span>Total Points</span>
-                  <div className={styles.perfBar}>
-                    <div className={styles.perfFill} style={{width:'100%',background:'#ff9800'}}/>
-                  </div>
-                  <span>{gs.points}</span>
-                </div>
+                ))}
               </div>
             )}
             <div className={styles.card}>
-              <h3 className={styles.cardTitle}>🕐 Recent Matches</h3>
-              {gs.matches.length === 0
+              <h3 className={styles.cardTitle}>🕐 Recent Games</h3>
+              {(d.recentGames||[]).length === 0
                 ? (
                   <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>🎮</div>
                     <p className={styles.emptyTitle}>No games played yet</p>
-                    <p className={styles.emptySub}>Play some games to see your history!</p>
+                    <p className={styles.emptySub}>Play some games and your history will appear here!</p>
                     <Link to="/games" className="btn btn-primary" style={{marginTop:12,display:'inline-block'}}>
                       Browse Games
                     </Link>
                   </div>
                 )
-                : gs.matches.slice(0,8).map((g,i) => (
+                : (d.recentGames||[]).map((g,i) => (
                   <div key={i} className={styles.recentRow}>
-                    <span className={styles.recentIcon}>
-                      {g.outcome==='Win'?'🏆':g.outcome==='Draw'?'🤝':'💔'}
-                    </span>
+                    <span className={styles.recentIcon}>{outcomeIcon(g.outcome)}</span>
                     <div className={styles.recentInfo}>
-                      <span className={styles.recentType}>{g.game}</span>
+                      <span className={styles.recentType}>{g.gameType}</span>
                       <span className={styles.recentDate}>{fmtDate(g.playedAt)}</span>
                     </div>
                     <div className={styles.recentRight}>
-                      <span style={{color:g.outcome==='Win'?'#4caf50':g.outcome==='Draw'?'#ff9800':'#f44336',fontWeight:700,fontSize:13}}>
-                        {g.outcome}
-                      </span>
-                      {g.pointsEarned>0 && <span className={styles.recentPts}>+{g.pointsEarned} pts</span>}
+                      <span style={{color:outcomeColor(g.outcome),fontWeight:700,fontSize:13}}>{g.outcome}</span>
+                      {g.pointsEarned > 0 && <span className={styles.recentPts}>+{g.pointsEarned} pts</span>}
                     </div>
                   </div>
                 ))
               }
-              {gs.matches.length > 0 && (
+              {(d.recentGames||[]).length > 0 && (
                 <button className={styles.seeAll} onClick={()=>setTab('history')}>
-                  See all {gs.matches.length} games →
+                  See all games →
                 </button>
               )}
             </div>
@@ -386,25 +329,32 @@ export default function Dashboard() {
         {/* History */}
         {tab === 'history' && (
           <div className={styles.card}>
-            <h3 className={styles.cardTitle}>🎮 Game History</h3>
-            {gs.matches.length === 0
-              ? <div className={styles.emptyState}><div className={styles.emptyIcon}>🎮</div><p className={styles.emptyTitle}>No games yet</p></div>
+            <div className={styles.histHeader}>
+              <h3 className={styles.cardTitle}>🎮 Game History</h3>
+              <select className={styles.filterSelect} value={gameFilter}
+                onChange={e=>{setGameFilter(e.target.value);loadHistory(1,e.target.value)}}>
+                <option value="">All Games</option>
+                <option value="Ludo">Ludo</option>
+                <option value="TableTennis">Table Tennis</option>
+                <option value="SnakesAndLadders">Snakes &amp; Ladders</option>
+                <option value="ParkingJam">Parking Jam</option>
+              </select>
+            </div>
+            {history.length === 0
+              ? <div className={styles.emptyState}><div className={styles.emptyIcon}>🎮</div><p className={styles.emptyTitle}>No game history yet</p><p className={styles.emptySub}>Play games to see your history here.</p></div>
               : (
                 <table className={styles.histTable}>
                   <thead>
-                    <tr><th>Game</th><th>Outcome</th><th>Position/Score</th><th>Points</th><th>Date</th></tr>
+                    <tr><th>Game</th><th>Outcome</th><th>Score</th><th>Points</th><th>Earned</th><th>Date</th></tr>
                   </thead>
                   <tbody>
-                    {gs.matches.map((g,i) => (
+                    {history.map((g,i) => (
                       <tr key={i}>
-                        <td className={styles.tdGame}>{g.game}</td>
-                        <td>
-                          <span style={{color:g.outcome==='Win'?'#4caf50':g.outcome==='Draw'?'#ff9800':'#f44336',fontWeight:700}}>
-                            {g.outcome==='Win'?'🏆':g.outcome==='Draw'?'🤝':'💔'} {g.outcome}
-                          </span>
-                        </td>
-                        <td>{g.position ? `${g.position}${g.position===1?'st':g.position===2?'nd':g.position===3?'rd':'th'} place` : g.score}</td>
+                        <td className={styles.tdGame}>{g.gameType||'—'}</td>
+                        <td><span style={{color:outcomeColor(g.outcome),fontWeight:700}}>{outcomeIcon(g.outcome)} {g.outcome}</span></td>
+                        <td>{g.score ?? '—'}</td>
                         <td><span className={styles.ptsBadge}>+{g.pointsEarned||0}</span></td>
+                        <td>{(g.moneyEarned||0) > 0 ? fmtMoney(g.moneyEarned) : '—'}</td>
                         <td className={styles.tdDate}>{fmtDate(g.playedAt)}</td>
                       </tr>
                     ))}
@@ -412,6 +362,13 @@ export default function Dashboard() {
                 </table>
               )
             }
+            {histTotal > 10 && (
+              <div className={styles.pagination}>
+                <button disabled={histPage<=1} onClick={()=>loadHistory(histPage-1,gameFilter)}>← Prev</button>
+                <span>Page {histPage} of {Math.ceil(histTotal/10)}</span>
+                <button disabled={histPage>=Math.ceil(histTotal/10)} onClick={()=>loadHistory(histPage+1,gameFilter)}>Next →</button>
+              </div>
+            )}
           </div>
         )}
 
@@ -453,29 +410,26 @@ export default function Dashboard() {
             <div className={styles.card}>
               <h3 className={styles.cardTitle}>📋 Transactions</h3>
               {txnLoading ? <div className={styles.spinner}/> :
-               txns.length === 0 ? (
-                <div className={styles.emptyState}>
-                  <div className={styles.emptyIcon}>💳</div>
-                  <p className={styles.emptyTitle}>No transactions yet</p>
-                </div>
-               ) : (
-                <table className={styles.txnTable}>
-                  <thead><tr><th>Type</th><th>Amount</th><th>Points</th><th>Reason</th><th>Date</th></tr></thead>
-                  <tbody>
-                    {txns.map((t,i) => (
-                      <tr key={i}>
-                        <td>{t.type||t.transactionType||'—'}</td>
-                        <td className={(+(t.moneyDelta||t.amount||0))>=0?styles.txnPos:styles.txnNeg}>
-                          {(+(t.moneyDelta||t.amount||0))>=0?'+':''}{fmtMoney(t.moneyDelta??t.amount)}
-                        </td>
-                        <td>{t.pointsDelta!=null?`${t.pointsDelta>=0?'+':''}${t.pointsDelta}`:'—'}</td>
-                        <td>{t.reason||t.description||'—'}</td>
-                        <td>{fmtDate(t.createdAt||t.date)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-               )
+               txns.length === 0
+                ? <div className={styles.emptyState}><div className={styles.emptyIcon}>💳</div><p className={styles.emptyTitle}>No transactions yet</p></div>
+                : (
+                  <table className={styles.txnTable}>
+                    <thead><tr><th>Type</th><th>Amount</th><th>Points</th><th>Reason</th><th>Date</th></tr></thead>
+                    <tbody>
+                      {txns.map((t,i) => (
+                        <tr key={i}>
+                          <td>{t.type||t.transactionType||'—'}</td>
+                          <td className={(+(t.moneyDelta||t.amount||0))>=0?styles.txnPos:styles.txnNeg}>
+                            {(+(t.moneyDelta||t.amount||0))>=0?'+':''}{fmtMoney(t.moneyDelta??t.amount)}
+                          </td>
+                          <td>{t.pointsDelta!=null?`${t.pointsDelta>=0?'+':''}${t.pointsDelta}`:'—'}</td>
+                          <td>{t.reason||t.description||'—'}</td>
+                          <td>{fmtDate(t.createdAt||t.date)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )
               }
             </div>
           </div>
