@@ -8,9 +8,8 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 }
 
-async function gw(method, path, body, auth) {
-  const h = { 'Content-Type':'application/json' }
-  if (auth) h['Authorization'] = auth
+async function gw(method, path, body) {
+  const h = { 'Content-Type': 'application/json' }
   const r = await fetch(`${GATEWAY}${path}`, {
     method, headers: h,
     ...(body ? { body: JSON.stringify(body) } : {}),
@@ -73,7 +72,7 @@ export default async function handler(req, res) {
         speedrunEnabled: Boolean(speedrunEnabled),
         submittedAt:    new Date().toISOString(),
       }
-      const r = await gw('POST', '/api/v1/leaderboard', body, req.headers.authorization)
+      const r = await gw('POST', '/api/v1/leaderboard', body)
       if (!r.ok) return res.status(r.status).json({ error:`Backend ${r.status}` })
       return res.status(201).json({ ok:true })
     }

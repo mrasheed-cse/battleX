@@ -132,15 +132,6 @@ export const wallet = {
   getByPlayer:  (id)     => get(WALLET, `/api/v1/wallet/${id}`),
   adjust:       (id, b)  => post(WALLET, `/api/v1/wallet/${id}/adjust`, b),
 }
-
-// ── Internal player stats recording ─────────────────────────────────────────
-// Calls POST /api/v1/internal/players/record-game/batch
-// This is the proper architecture: game completion → player stats update
-export async function recordGameResults(results) {
-  // results: array of { userId, username, gameType, outcome, score, pointsEarned, moneyEarned, opponentCount, sessionId }
-  return post(PLAYER, '/api/v1/internal/players/record-game/batch', results)
-}
-
 // ── Leaderboard helpers (call Vercel API routes which proxy to Game Service) ─
 export const leaderboard = {
   // General (parking jam etc.)

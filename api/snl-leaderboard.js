@@ -9,9 +9,8 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 }
 
-async function gw(method, path, body, auth) {
-  const h = { 'Content-Type':'application/json' }
-  if (auth) h['Authorization'] = auth
+async function gw(method, path, body) {
+  const h = { 'Content-Type': 'application/json' }
   const r = await fetch(`${GATEWAY}${path}`, {
     method, headers: h,
     ...(body ? { body: JSON.stringify(body) } : {}),
@@ -40,8 +39,6 @@ export default async function handler(req, res) {
       if (!results || !Array.isArray(results) || !results.length)
         return res.status(400).json({ error:'results[] required' })
 
-      const auth = req.headers.authorization
-
       // Step 1: create match
       const matchBody = {
         matchCode:   String(matchCode || `snl-${Date.now()}`).slice(0,32),
@@ -49,7 +46,7 @@ export default async function handler(req, res) {
         durationMs:  Math.max(parseInt(durationMs)||0, 0),
         playedAt:    new Date().toISOString(),
       }
-      const mRes = await gw('POST', '/api/v1/snl/matches', matchBody, auth)
+      const mRes = await gw('POST', '/api/v1/snl/matches', matchBody)
       if (!mRes.ok) return res.status(mRes.status).json({ error:`Match create failed ${mRes.status}`, detail: mRes.data })
 
       const matchId = mRes.data?.data?.id || mRes.data?.id
@@ -66,7 +63,7 @@ export default async function handler(req, res) {
         submittedAt: new Date().toISOString(),
       }))
 
-      const rRes = await gw('POST', '/api/v1/snl/results', resultRows, auth)
+      const rRes = await gw('POST', '/api/v1/snl/results', resultRows)
       if (!rRes.ok) return res.status(rRes.status).json({ error:`Results post failed ${rRes.status}` })
       return res.status(201).json({ success:true, matchId, count: resultRows.length })
     }

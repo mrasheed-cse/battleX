@@ -31,9 +31,8 @@ function normalizeEntry(e) {
   }
 }
 
-async function gwFetch(method, path, body, authHeader) {
+async function gwFetch(method, path, body) {
   const headers = { 'Content-Type': 'application/json' }
-  if (authHeader) headers['Authorization'] = authHeader
   const r = await fetch(`${GATEWAY}${path}`, {
     method, headers,
     ...(body ? { body: JSON.stringify(body) } : {}),
@@ -52,7 +51,6 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const { playerName='', limit='100', view='leaderboard' } = req.query
       const lim = Math.min(parseInt(limit)||100, 500)
-      const auth = req.headers.authorization
 
       let url
       if (view === 'player' && playerName)
@@ -62,7 +60,7 @@ export default async function handler(req, res) {
       else
         url = `/api/v1/table-tennis/leaderboard?limit=${lim}`
 
-      const r = await gwFetch('GET', url, null, auth)
+      const r = await gwFetch('GET', url, null)
       const entries = extractEntries(r.data).map(normalizeEntry)
       return res.status(200).json({ entries, count: entries.length })
     }
@@ -86,9 +84,7 @@ export default async function handler(req, res) {
         totalPoints:   Math.max(parseInt(totalPoints)   ||0, 0),
         submittedAt:   new Date().toISOString(),
       }
-
-      const auth = req.headers.authorization
-      const r = await gwFetch('POST', '/api/v1/table-tennis', body, auth)
+      const r = await gwFetch('POST', '/api/v1/table-tennis', body)
       if (!r.ok) return res.status(r.status).json({ error:`Backend ${r.status}` })
       return res.status(201).json({ ok:true, success:true })
     }
