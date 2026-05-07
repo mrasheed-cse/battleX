@@ -12,7 +12,8 @@ const NameInput = ({ isRoomPrivate, roomId }) => {
 
     const handleButtonClick = () => {
         if (!nickname.value) return;
-        socket.emit('player:login', { name: nickname.value, password: password.value, roomId: roomId });
+        const battlexToken = localStorage.getItem('bx_token') || localStorage.getItem('token') || null;
+        socket.emit('player:login', { name: nickname.value, password: password.value, roomId: roomId, battlexToken });
     };
 
     useKeyPress('Enter', handleButtonClick);
