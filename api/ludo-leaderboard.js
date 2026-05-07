@@ -11,8 +11,9 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 }
 
-async function gw(method, path, body) {
+async function gw(method, path, body, authHeader) {
   const h = { 'Content-Type': 'application/json' }
+  if (authHeader) h['Authorization'] = authHeader
   const r = await fetch(`${GATEWAY}${path}`, {
     method, headers: h,
     ...(body ? { body: JSON.stringify(body) } : {}),
@@ -40,6 +41,9 @@ export default async function handler(req, res) {
       const { matchId, results, totalPlayers } = req.body
       if (!matchId || !Array.isArray(results) || !results.length)
         return res.status(400).json({ error: 'matchId and results[] required' })
+
+      // Forward auth token if present (needed for BattleX player stats update)
+      const authHeader = req.headers.authorization || null
 
       const playedAt = new Date().toISOString()
       let savedCount = 0
@@ -71,7 +75,7 @@ export default async function handler(req, res) {
         totalPlayers: parseInt(totalPlayers) || results.length,
         playedAt,
       }))
-      const batchRes = await gw('POST', '/api/v1/ludo/results/batch', batchBody)
+      const batchRes = await gw('POST', '/api/v1/ludo/results/batch', batchBody, authHeader)
       console.log('[LUDO] batch result:', batchRes.status, JSON.stringify(batchRes.data).slice(0,100))
 
       return res.status(201).json({ ok: true, count: savedCount })

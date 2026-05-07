@@ -13,5 +13,200 @@
       #root { width: 100%; min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow-x: hidden; }
     </style>
   </head>
-  <body><div id="root"></div></body>
+  <body><div id="root"></div>
+  <!--
+    BattleX postMessage bridge.
+    Intercepts Socket.IO "game:winner" events from the Ludo server
+    and forwards a LUDO_GAME_OVER message to the parent frame so
+    LudoPlay.jsx can save results to the leaderboard and BattleX API.
+  -->
+  <script>
+  (function () {
+    'use strict';
+
+    // We monkey-patch the Socket.IO connect so we can intercept events
+    // without touching the minified bundle.
+    var _gameOverSent = false;
+    var _startTime = Date.now();
+    var _finishTimes = {};   // color → timestamp
+    var _players = [];
+    var _roomId = null;
+
+    // Helper: post to parent window
+    function notifyParent(payload) {
+      if (_gameOverSent) return;
+      _gameOverSent = true;
+      try {
+        window.parent.postMessage(payload, window.location.origin);
+        console.log('[LudoBridge] postMessage sent:', payload.type);
+      } catch (e) {
+        console.warn('[LudoBridge] postMessage failed:', e);
+      }
+    }
+
+    // Patch Socket.IO — wait for it to be available then hook "on"
+    function patchSocket(socket) {
+      if (!socket || socket.__bxPatched) return;
+      socket.__bxPatched = true;
+
+      var _origOn = socket.on.bind(socket);
+
+      socket.on = function (event, handler) {
+        if (event === 'room:data') {
+          return _origOn(event, function (raw) {
+            try {
+              var data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+              if (data && data.players) _players = data.players;
+              if (data && data._id) _roomId = data._id;
+            } catch (e) {}
+            handler(raw);
+          });
+        }
+
+        if (event === 'game:winner') {
+          return _origOn(event, function (winnerData) {
+            var now = Date.now();
+            var duration = now - _startTime;
+
+            try {
+              var order = Array.isArray(winnerData) ? winnerData : [winnerData];
+              var results = order.map(function (color, idx) {
+                var player = _players.find(function (p) { return p.color === color; });
+                var finT = _finishTimes[color] ? _finishTimes[color] - _startTime : duration;
+                return {
+                  playerName: (player && player.name && player.name !== '...') ? player.name : color,
+                  position: idx + 1,
+                  color: color,
+                  durationMs: Math.max(0, Math.round(finT)),
+                  playerId: (player && player.battlexUserId) ? player.battlexUserId : null,
+                };
+              });
+
+              notifyParent({
+                type: 'LUDO_GAME_OVER',
+                matchId: _roomId || ('ludo_' + Date.now()),
+                results: results,
+                totalPlayers: results.length,
+                gameId: null,   // BattleX game service ID if applicable
+              });
+            } catch (e) {
+              console.warn('[LudoBridge] Error building results:', e);
+            }
+
+            handler(winnerData);
+          });
+        }
+
+        return _origOn(event, handler);
+      };
+    }
+
+    // Socket.IO creates sockets via io() — intercept at manager level
+    function tryPatch() {
+      // The Ludo app stores its socket in React context; we intercept
+      // by watching XMLHttpRequest / WebSocket for the socket.io handshake
+      // and then hooking into the global socket manager if available.
+      if (window.__ludoSocket) {
+        patchSocket(window.__ludoSocket);
+        return;
+      }
+
+      // Fallback: look for Socket.IO Manager in module scope via iu (known export name)
+      // The bundle exposes `iu` as the socket factory. We watch for connection.
+      var checkInterval = setInterval(function () {
+        // Look for any connected socket in the global scope
+        if (window.__ludoSocket) {
+          clearInterval(checkInterval);
+          patchSocket(window.__ludoSocket);
+        }
+      }, 200);
+
+      // Stop checking after 30 s
+      setTimeout(function () { clearInterval(checkInterval); }, 30000);
+    }
+
+    // The Ludo app's Gameboard.jsx calls socket.on('game:winner', …)
+    // We can intercept by patching EventTarget / custom emitters at load time.
+    // Since Socket.IO uses its own EventEmitter, we patch at the prototype level.
+    var _origAddEventListener = EventTarget.prototype.addEventListener;
+
+    // Intercept WebSocket messages to detect game:winner packets
+    var _OrigWS = window.WebSocket;
+    if (_OrigWS) {
+      window.WebSocket = function (url, protocols) {
+        var ws = protocols ? new _OrigWS(url, protocols) : new _OrigWS(url);
+
+        var _origAddMsg = ws.addEventListener.bind(ws);
+        ws.addEventListener = function (type, listener, opts) {
+          if (type === 'message') {
+            var wrapped = function (evt) {
+              try {
+                var txt = typeof evt.data === 'string' ? evt.data : null;
+                if (txt) {
+                  // Socket.IO packet: "4" = EVENT, then JSON
+                  if (txt.charAt(0) === '4' && txt.indexOf('game:winner') !== -1) {
+                    var jsonStr = txt.slice(1);
+                    var arr = JSON.parse(jsonStr);
+                    // arr = ["game:winner", <winnerData>]
+                    if (Array.isArray(arr) && arr[0] === 'game:winner') {
+                      var wData = arr[1];
+                      setTimeout(function () {
+                        if (!_gameOverSent) {
+                          var now = Date.now();
+                          var duration = now - _startTime;
+                          var order = Array.isArray(wData) ? wData : [wData];
+                          var results = order.map(function (color, idx) {
+                            var player = _players.find(function (p) { return p.color === color; });
+                            return {
+                              playerName: (player && player.name && player.name !== '...') ? player.name : color,
+                              position: idx + 1,
+                              color: color,
+                              durationMs: Math.max(0, Math.round(duration / (idx + 1))),
+                              playerId: (player && player.battlexUserId) ? player.battlexUserId : null,
+                            };
+                          });
+                          notifyParent({
+                            type: 'LUDO_GAME_OVER',
+                            matchId: _roomId || ('ludo_' + Date.now()),
+                            results: results,
+                            totalPlayers: results.length,
+                            gameId: null,
+                          });
+                        }
+                      }, 0);
+                    }
+                  }
+                  // Also capture room:data to get player list
+                  if (txt.charAt(0) === '4' && txt.indexOf('room:data') !== -1) {
+                    try {
+                      var rArr = JSON.parse(txt.slice(1));
+                      if (Array.isArray(rArr) && rArr[0] === 'room:data') {
+                        var rData = typeof rArr[1] === 'string' ? JSON.parse(rArr[1]) : rArr[1];
+                        if (rData && rData.players) _players = rData.players;
+                        if (rData && rData._id) _roomId = rData._id;
+                      }
+                    } catch (e2) {}
+                  }
+                }
+              } catch (e) {}
+              listener(evt);
+            };
+            return _origAddMsg(type, wrapped, opts);
+          }
+          return _origAddMsg(type, listener, opts);
+        };
+
+        return ws;
+      };
+      // Copy static properties
+      Object.keys(_OrigWS).forEach(function (k) {
+        try { window.WebSocket[k] = _OrigWS[k]; } catch (e) {}
+      });
+      window.WebSocket.prototype = _OrigWS.prototype;
+    }
+
+    tryPatch();
+  })();
+  </script>
+  </body>
 </html>

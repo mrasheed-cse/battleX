@@ -34,6 +34,7 @@ import ParkingJamLeaderboard   from './pages/ParkingJamLeaderboard'
 import TableTennisLeaderboard from './pages/TableTennisLeaderboard'
 import { loadAdSenseScript, initAdMob, isNativeApp } from './services/adManager'
 import LudoLeaderboard    from './pages/LudoLeaderboard'
+import LudoPlay           from './pages/LudoPlay'
 
 function Layout({ children, onLoginClick, onSignupClick }) {
   useScrollToTop()
@@ -101,6 +102,8 @@ export default function App() {
               <Routes>
                 {/* GamePlay rendered WITHOUT navbar/footer for full-screen game experience */}
                 <Route path="/games/:slug/play" element={<GamePlay />} />
+                {/* Ludo has its own dedicated play page with result submission */}
+                <Route path="/games/ludo/play" element={<LudoPlay />} />
 
                 <Route path="/*" element={
                   <Layout onLoginClick={openLogin} onSignupClick={openSignup}>
@@ -120,7 +123,6 @@ export default function App() {
                       <Route path="/privacy"           element={<Privacy />} />
                       <Route path="/terms"             element={<Terms />} />
                       <Route path="/games/ludo/leaderboard" element={<LudoLeaderboard />} />
-              <Route path="/games/ludo/play" element={<LudoRedirect />} />
                       <Route path="/games/snakes-and-ladders/leaderboard" element={<SnakesLeaderboard />} />
                       <Route path="/games/parking-jam/leaderboard"   element={<ParkingJamLeaderboard />} />
                       <Route path="/games/table-tennis/leaderboard" element={<TableTennisLeaderboard />} />

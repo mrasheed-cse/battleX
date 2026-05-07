@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { players, wallet, auth as authApi } from '../services/api'
@@ -133,10 +133,11 @@ export default function Dashboard() {
   const loadCore = useCallback(async () => {
     setLoading(true); setError(null)
     try {
-      const [dRes, wRes, sRes] = await Promise.allSettled([
+      const [dRes, wRes, sRes, hRes] = await Promise.allSettled([
         players.dashboard(),
         wallet.me(),
         players.stats(),
+        players.gameHistory({ page: 1, pageSize: 5 }),  // preload for overview
       ])
       if (dRes.status === 'fulfilled') setDashboard(unwrap(dRes.value))
       else console.error('[Dashboard]', dRes.reason?.message)
@@ -144,6 +145,11 @@ export default function Dashboard() {
       else console.error('[Wallet]', wRes.reason?.message)
       if (sRes.status === 'fulfilled') setStats(unwrap(sRes.value))
       else console.warn('[Stats] not available:', sRes.reason?.message)
+      if (hRes.status === 'fulfilled') {
+        const hData = unwrap(hRes.value)
+        setHistory(hData?.items || [])
+        setHistTotal(hData?.totalCount || 0)
+      }
     } catch(e) { setError(e.message)
     } finally { setLoading(false) }
   }, [])
@@ -173,10 +179,28 @@ export default function Dashboard() {
     } finally { setTxnLoading(false) }
   }, [])
 
+  const lastRefreshRef = useRef(0)
+
   useEffect(() => {
     if (!user) { navigate('/'); return }
     loadCore()
   }, [user, navigate, loadCore])
+
+  // Auto-refresh when user returns to this tab (e.g. after playing a game)
+  useEffect(() => {
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        const now = Date.now()
+        // Only refresh if it's been more than 10 seconds since last refresh
+        if (now - lastRefreshRef.current > 10000) {
+          lastRefreshRef.current = now
+          loadCore()
+        }
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibility)
+    return () => document.removeEventListener('visibilitychange', handleVisibility)
+  }, [loadCore])
 
   useEffect(() => {
     if (tab === 'history') loadHistory(1, gameFilter)
@@ -292,7 +316,10 @@ export default function Dashboard() {
             )}
             <div className={styles.card}>
               <h3 className={styles.cardTitle}>🕐 Recent Games</h3>
-              {(d.recentGames||[]).length === 0
+              {/* Use recentGames from dashboard API, or fall back to pre-loaded history */}
+              {(()=>{
+                const recent = (d.recentGames||[]).length > 0 ? d.recentGames : history.slice(0,5)
+                return recent.length === 0
                 ? (
                   <div className={styles.emptyState}>
                     <div className={styles.emptyIcon}>🎮</div>
@@ -303,7 +330,7 @@ export default function Dashboard() {
                     </Link>
                   </div>
                 )
-                : (d.recentGames||[]).map((g,i) => (
+                : recent.map((g,i) => (
                   <div key={i} className={styles.recentRow}>
                     <span className={styles.recentIcon}>{outcomeIcon(g.outcome)}</span>
                     <div className={styles.recentInfo}>
@@ -316,8 +343,8 @@ export default function Dashboard() {
                     </div>
                   </div>
                 ))
-              }
-              {(d.recentGames||[]).length > 0 && (
+              })()}
+              {(history.length > 0 || (d.recentGames||[]).length > 0) && (
                 <button className={styles.seeAll} onClick={()=>setTab('history')}>
                   See all games →
                 </button>
