@@ -334,7 +334,7 @@ export default function Dashboard() {
                   <div key={i} className={styles.recentRow}>
                     <span className={styles.recentIcon}>{outcomeIcon(g.outcome)}</span>
                     <div className={styles.recentInfo}>
-                      <span className={styles.recentType}>{g.gameType}</span>
+                      <span className={styles.recentType}>{g.gameType ? g.gameType.charAt(0).toUpperCase()+g.gameType.slice(1) : '—'}</span>
                       <span className={styles.recentDate}>{fmtDate(g.playedAt)}</span>
                     </div>
                     <div className={styles.recentRight}>
@@ -361,10 +361,10 @@ export default function Dashboard() {
               <select className={styles.filterSelect} value={gameFilter}
                 onChange={e=>{setGameFilter(e.target.value);loadHistory(1,e.target.value)}}>
                 <option value="">All Games</option>
-                <option value="Ludo">Ludo</option>
-                <option value="TableTennis">Table Tennis</option>
-                <option value="SnakesAndLadders">Snakes &amp; Ladders</option>
-                <option value="ParkingJam">Parking Jam</option>
+                <option value="ludo">Ludo</option>
+                <option value="tabletennis">Table Tennis</option>
+                <option value="snakesandladders">Snakes &amp; Ladders</option>
+                <option value="parkingjam">Parking Jam</option>
               </select>
             </div>
             {history.length === 0
@@ -377,7 +377,7 @@ export default function Dashboard() {
                   <tbody>
                     {history.map((g,i) => (
                       <tr key={i}>
-                        <td className={styles.tdGame}>{g.gameType||'—'}</td>
+                        <td className={styles.tdGame}>{g.gameType ? g.gameType.charAt(0).toUpperCase()+g.gameType.slice(1) : '—'}</td>
                         <td><span style={{color:outcomeColor(g.outcome),fontWeight:700}}>{outcomeIcon(g.outcome)} {g.outcome}</span></td>
                         <td>{g.score ?? '—'}</td>
                         <td><span className={styles.ptsBadge}>+{g.pointsEarned||0}</span></td>
