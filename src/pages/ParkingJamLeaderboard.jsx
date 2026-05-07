@@ -22,7 +22,8 @@ export default function ParkingJamLeaderboard() {
   const [entries, setEntries] = useState([])
   const [loading, setLoading] = useState(true)
   const [error,   setError]   = useState(null)
-  const [newScore, setNewScore] = useState(null)  // highlight newly submitted score
+  const [newScore,  setNewScore]  = useState(null)  // highlight newly submitted score
+  const [sortOrder,  setSortOrder]  = useState('desc') // desc = newest first
 
   // ── Listen for score submission from game iframe ──────────────────────────
   useEffect(() => {
@@ -139,6 +140,14 @@ export default function ParkingJamLeaderboard() {
           ))}
         </div>
 
+        <div style={{display:'flex',gap:6,alignItems:'center'}}>
+          <button
+            style={{padding:'6px 12px',borderRadius:6,border:'1px solid rgba(255,255,255,0.15)',background:sortOrder==='desc'?'rgba(99,102,241,0.3)':'rgba(255,255,255,0.05)',color:'#fff',cursor:'pointer',fontSize:12}}
+            onClick={() => setSortOrder('desc')}>↓ Newest</button>
+          <button
+            style={{padding:'6px 12px',borderRadius:6,border:'1px solid rgba(255,255,255,0.15)',background:sortOrder==='asc'?'rgba(99,102,241,0.3)':'rgba(255,255,255,0.05)',color:'#fff',cursor:'pointer',fontSize:12}}
+            onClick={() => setSortOrder('asc')}>↑ Oldest</button>
+        </div>
         <button onClick={fetchLeaderboard} className={styles.refresh} title="Refresh">
           🔄
         </button>
@@ -175,7 +184,11 @@ export default function ParkingJamLeaderboard() {
               </tr>
             </thead>
             <tbody>
-              {entries.map((e) => (
+              {[...entries].sort((a,b) => {
+                const ta = new Date(a.submitted_at||a.played_at||0).getTime()
+                const tb = new Date(b.submitted_at||b.played_at||0).getTime()
+                return sortOrder==='desc' ? tb-ta : ta-tb
+              }).map((e) => (
                 <tr
                   key={e.id}
                   className={`

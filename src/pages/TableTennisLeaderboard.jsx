@@ -46,6 +46,7 @@ export default function TableTennisLeaderboard() {
   const [entries,  setEntries]  = useState([])
   const [loading,  setLoading]  = useState(true)
   const [error,    setError]    = useState(null)
+  const [sortOrder, setSortOrder] = useState('desc') // desc = newest first
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -70,6 +71,13 @@ export default function TableTennisLeaderboard() {
   }, [period, opponent])
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  // Sort entries by date
+  const sortedEntries = [...entries].sort((a, b) => {
+    const ta = new Date(a.submitted_at || 0).getTime()
+    const tb = new Date(b.submitted_at || 0).getTime()
+    return sortOrder === 'desc' ? tb - ta : ta - tb
+  })
 
   // Stats summary
   const totalGames = entries.length
@@ -148,6 +156,19 @@ export default function TableTennisLeaderboard() {
               ))}
             </div>
           </div>
+          <div className={styles.filterGroup}>
+            <span className={styles.filterLabel}>Order</span>
+            <div className={styles.filterBtns}>
+              <button
+                className={`${styles.filterBtn} ${sortOrder === 'desc' ? styles.filterBtnActive : ''}`}
+                onClick={() => setSortOrder('desc')}
+              >↓ Newest</button>
+              <button
+                className={`${styles.filterBtn} ${sortOrder === 'asc' ? styles.filterBtnActive : ''}`}
+                onClick={() => setSortOrder('asc')}
+              >↑ Oldest</button>
+            </div>
+          </div>
           <button className={styles.refreshBtn} onClick={fetchData} disabled={loading}>
             {loading ? '⟳' : '↺'} Refresh
           </button>
@@ -184,7 +205,7 @@ export default function TableTennisLeaderboard() {
                 </tr>
               </thead>
               <tbody>
-                {entries.map((e, i) => (
+                {sortedEntries.map((e, i) => (
                   <tr key={e.id} className={`${styles.row} ${e.won ? styles.rowWin : styles.rowLoss}`}>
                     <td className={styles.tdRank}>
                       {i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : i + 1}

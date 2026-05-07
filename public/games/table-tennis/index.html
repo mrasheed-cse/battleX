@@ -285,7 +285,9 @@ body{background:#0a0a18;font-family:'Rajdhani',sans-serif;user-select:none;
   <div class="sub">Online Multiplayer</div>
   <!-- Player name input -->
   <div style="margin-bottom:20px;display:flex;flex-direction:column;align-items:center;gap:8px;">
-    <div style="font-size:10px;letter-spacing:3px;color:#556;text-transform:uppercase;margin-bottom:2px;">Your Name</div>
+    <div style="font-size:10px;letter-spacing:3px;color:#556;text-transform:uppercase;margin-bottom:2px;">
+      Your Name <span id="signed-in-badge" style="display:none;color:#4ade80;font-size:10px;letter-spacing:1px;">● Signed In</span>
+    </div>
     <input id="input-myname" type="text" maxlength="16" autocomplete="off" spellcheck="false"
       placeholder="Enter your name"
       style="font-family:'Rajdhani',sans-serif;font-weight:700;font-size:18px;letter-spacing:2px;
@@ -1897,6 +1899,20 @@ var rematchReady = 0;
 
 /* ── Player names ── */
 var myName   = localStorage.getItem('username') || localStorage.getItem('bx_username') || 'Player 1';   /* set from input before hosting/joining */
+
+/* ── BattleX: auto-fill name for logged-in users ── */
+(function(){
+  var bxUser = localStorage.getItem('username') || localStorage.getItem('bx_username') || null;
+  var inp = document.getElementById('input-myname');
+  if(bxUser && inp){
+    inp.value = bxUser;
+    inp.readOnly = true;
+    inp.style.opacity = '0.75';
+    inp.style.cursor = 'not-allowed';
+    var badge = document.getElementById('signed-in-badge');
+    if(badge) badge.style.display = 'inline';
+  }
+})();
 var oppName  = 'Opponent';   /* received from opponent after connection */
 
 function getMyName(){

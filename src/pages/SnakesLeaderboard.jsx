@@ -364,6 +364,14 @@ export default function SnakesLeaderboard() {
                 </button>
               ))}
             </div>
+            <div style={{display:'flex',gap:6,alignItems:'center'}}>
+              <button
+                style={{padding:'6px 12px',borderRadius:6,border:'1px solid rgba(255,255,255,0.15)',background: sortOrder==='desc'?'rgba(99,102,241,0.3)':'rgba(255,255,255,0.05)',color:'#fff',cursor:'pointer',fontSize:12}}
+                onClick={() => setSortOrder('desc')}>↓ Newest</button>
+              <button
+                style={{padding:'6px 12px',borderRadius:6,border:'1px solid rgba(255,255,255,0.15)',background: sortOrder==='asc'?'rgba(99,102,241,0.3)':'rgba(255,255,255,0.05)',color:'#fff',cursor:'pointer',fontSize:12}}
+                onClick={() => setSortOrder('asc')}>↑ Oldest</button>
+            </div>
             <button className={styles.refreshBtn} onClick={fetchData} disabled={loading}>
               <span style={{display:'inline-block',animation:loading?'spin 0.8s linear infinite':'none'}}>↺</span>
             </button>
@@ -405,7 +413,7 @@ export default function SnakesLeaderboard() {
                 <span>{matches.length} match{matches.length!==1?'es':''}</span>
                 <span className={styles.clickHint}>Click any match for details</span>
               </div>
-              {matches.map(m => (
+              {(sortOrder==='desc' ? [...matches].sort((a,b)=>new Date(b.played_at||0)-new Date(a.played_at||0)) : [...matches].sort((a,b)=>new Date(a.played_at||0)-new Date(b.played_at||0))).map(m => (
                 <MatchRow key={m.match_id} match={m} highlight={query} onSelect={setSelected}/>
               ))}
             </div>
