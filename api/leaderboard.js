@@ -8,8 +8,9 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 }
 
-async function gw(method, path, body) {
+async function gw(method, path, body, authHeader) {
   const h = { 'Content-Type': 'application/json' }
+  if (authHeader) h['Authorization'] = authHeader
   const r = await fetch(`${GATEWAY}${path}`, {
     method, headers: h,
     ...(body ? { body: JSON.stringify(body) } : {}),
@@ -59,20 +60,23 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      const { game, playerName, score, speedrunTimeMs, level, speedrunEnabled } = req.body
+      const { game, playerName, score, speedrunTimeMs, level, speedrunEnabled, won, pointsEarned } = req.body
       if (!game || !playerName || score===undefined)
         return res.status(400).json({ error:'game, playerName, score required' })
 
+      const authHeader = req.headers.authorization || null
       const body = {
-        game:           String(game).slice(0,50),
-        playerName:     String(playerName).slice(0,50),
-        score:          Math.max(parseInt(score)||0, 0),
-        speedrunTimeMs: speedrunTimeMs ? Math.max(parseInt(speedrunTimeMs)||0,0) : null,
-        level:          Math.max(parseInt(level)||1, 1),
+        game:            String(game).slice(0,50),
+        playerName:      String(playerName).slice(0,50),
+        score:           Math.max(parseInt(score)||0, 0),
+        speedrunTimeMs:  speedrunTimeMs ? Math.max(parseInt(speedrunTimeMs)||0,0) : null,
+        level:           Math.max(parseInt(level)||1, 1),
         speedrunEnabled: Boolean(speedrunEnabled),
-        submittedAt:    new Date().toISOString(),
+        won:             Boolean(won),
+        pointsEarned:    Math.max(parseInt(pointsEarned)||0, 0),
+        submittedAt:     new Date().toISOString(),
       }
-      const r = await gw('POST', '/api/v1/leaderboard', body)
+      const r = await gw('POST', '/api/v1/leaderboard/results/batch', body, authHeader)
       if (!r.ok) return res.status(r.status).json({ error:`Backend ${r.status}` })
       return res.status(201).json({ ok:true })
     }

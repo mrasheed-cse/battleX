@@ -31,8 +31,9 @@ function normalizeEntry(e) {
   }
 }
 
-async function gwFetch(method, path, body) {
+async function gwFetch(method, path, body, authHeader) {
   const headers = { 'Content-Type': 'application/json' }
+  if (authHeader) headers['Authorization'] = authHeader
   const r = await fetch(`${GATEWAY}${path}`, {
     method, headers,
     ...(body ? { body: JSON.stringify(body) } : {}),
@@ -84,7 +85,8 @@ export default async function handler(req, res) {
         totalPoints:   Math.max(parseInt(totalPoints)   ||0, 0),
         submittedAt:   new Date().toISOString(),
       }
-      const r = await gwFetch('POST', '/api/v1/table-tennis', body)
+      const authHeader = req.headers.authorization || null
+      const r = await gwFetch('POST', '/api/v1/table-tennis/results/batch', body, authHeader)
       if (!r.ok) return res.status(r.status).json({ error:`Backend ${r.status}` })
       return res.status(201).json({ ok:true, success:true })
     }

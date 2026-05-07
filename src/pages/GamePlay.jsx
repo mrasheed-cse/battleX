@@ -255,30 +255,31 @@ export default function GamePlay() {
     }
 
     // Parking Jam score submission
-    if (data.type === 'PARKING_JAM_SCORE') {
+    // Parking Jam / Word Wipe → generic batch endpoint
+    if (data.type === 'PARKING_JAM_SCORE' || data.type === 'WORD_WIPE_SCORE') {
       try {
+        const authToken = localStorage.getItem('bx_token') || localStorage.getItem('token')
+        const headers = { 'Content-Type': 'application/json' }
+        if (authToken) headers['Authorization'] = `Bearer ${authToken}`
+        const gameKey = data.type === 'WORD_WIPE_SCORE' ? 'word_wipe' : 'parking_jam'
         const res = await fetch('/api/leaderboard', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: 'POST',
+          headers,
           body: JSON.stringify({
-            game:            'parking-jam',
-            playerName:      data.playerName,
-            speedrunTimeMs:  data.speedrunTimeMs,
-            speedrunTime:    data.speedrunTime,
-            score:           data.score,
-            level:           data.level,
-            speedrunEnabled: true,
+            game:            gameKey,
+            playerName:      data.playerName || localStorage.getItem('username') || 'Player',
+            score:           data.score      || 0,
+            level:           data.level      || 1,
+            won:             Boolean(data.won),
+            pointsEarned:    data.pointsEarned || data.score || 0,
+            speedrunEnabled: Boolean(data.speedrunEnabled),
+            speedrunTimeMs:  data.speedrunTimeMs || data.durationMs || 0,
           }),
         })
         const result = await res.json()
-        console.log('[BattleX] Score submit result:', result)
-        if (result.success) {
-          setScoreNotif({
-            playerName:   data.playerName,
-            score:        data.score,
-            speedrunTime: data.speedrunTimeMs,
-            rank:         result.rank,
-          })
+        console.log('[BattleX] Leaderboard result:', result)
+        if (result.ok) {
+          setScoreNotif({ playerName: data.playerName, score: data.score, rank: null })
         }
       } catch (e) {
         console.warn('[BattleX] Score submit failed:', e)
@@ -292,12 +293,12 @@ export default function GamePlay() {
       return
     }
 
-    // Table Tennis score submission
+    // Table Tennis score submission → new batch endpoint
     if (data.type === 'TABLE_TENNIS_SCORE') {
       try {
-        const token = localStorage.getItem('token')
+        const authToken = localStorage.getItem('bx_token') || localStorage.getItem('token')
         const headers = { 'Content-Type': 'application/json' }
-        if (token) headers['Authorization'] = `Bearer ${token}`
+        if (authToken) headers['Authorization'] = `Bearer ${authToken}`
         const res = await fetch('/api/table-tennis-leaderboard', {
           method: 'POST',
           headers,
@@ -316,21 +317,39 @@ export default function GamePlay() {
         const result = await res.json()
         console.log('[BattleX] TT score result:', result)
         if (result.success || result.ok) {
-          setScoreNotif({
-            playerName: data.playerName,
-            score:      data.playerScore,
-            rank:       null,
-          })
-
+          setScoreNotif({ playerName: data.playerName, score: data.playerScore, rank: null })
         }
       } catch (e) {
         console.warn('[BattleX] TT score submit failed:', e)
       }
       return
     }
-    // SNL match complete — score already submitted by game directly
+
+    // Snakes & Ladders match complete → batch endpoint
     if (data.type === 'SNL_MATCH_COMPLETE') {
-      // Score submitted directly from game to API — just show notification
+      try {
+        const authToken = localStorage.getItem('bx_token') || localStorage.getItem('token')
+        const headers = { 'Content-Type': 'application/json' }
+        if (authToken) headers['Authorization'] = `Bearer ${authToken}`
+        const res = await fetch('/api/snl-leaderboard', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            matchCode:   data.matchCode || `snl-${Date.now()}`,
+            playerCount: data.playerCount || (data.results||[]).length,
+            durationMs:  data.durationMs || 0,
+            results:     data.results || [],
+          }),
+        })
+        const result = await res.json()
+        console.log('[BattleX] SNL result:', result)
+        if (result.success) {
+          const me = (data.results||[]).find(r => r.playerName === localStorage.getItem('username'))
+          if (me) setScoreNotif({ playerName: me.playerName, score: me.score, rank: me.position })
+        }
+      } catch (e) {
+        console.warn('[BattleX] SNL submit failed:', e)
+      }
       return
     }
 
